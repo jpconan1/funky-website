@@ -1,0 +1,30 @@
+[
+  {
+    "name": "blog-post.txt",
+    "size": 63,
+    "modified": "2026-02-22T22:26:43.462Z",
+    "extension": ".txt",
+    "type": "text"
+  },
+  {
+    "name": "cool-image.png",
+    "size": 26,
+    "modified": "2026-02-22T22:34:52.854Z",
+    "extension": ".png",
+    "type": "image"
+  },
+  {
+    "name": "readme.md",
+    "size": 101,
+    "modified": "2026-02-22T22:26:47.980Z",
+    "extension": ".md",
+    "type": "text"
+  },
+  {
+    "name": "resume.txt",
+    "size": 54,
+    "modified": "2026-02-22T22:35:32.989Z",
+    "extension": ".txt",
+    "type": "text"
+  }
+]

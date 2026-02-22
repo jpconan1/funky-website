@@ -1,0 +1,145 @@
+{
+    "header": {
+        "biosVersion": "JP Conan's Personal Website",
+        "kernelRevision": "V0.1",
+        "energyStarLabel": "ENERGY STAR",
+        "energyStarSub": "EPA POLLUTION PREVENTER"
+    },
+    "sequence": [
+        {
+            "type": "wait",
+            "ms": 800
+        },
+        {
+            "type": "instant",
+            "text": "Copyright 2026 Jean-Paul Francois Andre Donald Conan"
+        },
+        {
+            "type": "instant",
+            "text": "ALL RIGHTS RESERVED"
+        },
+        {
+            "type": "wait",
+            "ms": 800
+        },
+        {
+            "type": "instant",
+            "text": ""
+        },
+        {
+            "type": "typing",
+            "text": "Main Processor : Intel(R) Pentium(R) 4 3.00GHz",
+            "speed": 5
+        },
+        {
+            "type": "progress",
+            "text": "Memory Test : ",
+            "target": 2048,
+            "unit": "MB OK",
+            "speed": 10
+        },
+        {
+            "type": "instant",
+            "text": ""
+        },
+        {
+            "type": "instant",
+            "text": "Award Plug and Play BIOS Extension v1.0A"
+        },
+        {
+            "type": "instant",
+            "text": "Copyright (C) 2004, Award Software, Inc."
+        },
+        {
+            "type": "wait",
+            "ms": 300
+        },
+        {
+            "type": "instant",
+            "text": "Detecting Career ........................................... [NONE]"
+        },
+        {
+            "type": "wait",
+            "ms": 100
+        },
+        {
+            "type": "instant",
+            "text": "Detecting Sucessful Projects ............................... [NONE]"
+        },
+        {
+            "type": "wait",
+            "ms": 100
+        },
+        {
+            "type": "instant",
+            "text": "Detecting Education ........................... [COMMUNITY COLLEGE]"
+        },
+        {
+            "type": "wait",
+            "ms": 100
+        },
+        {
+            "type": "instant",
+            "text": "Detecting Family  ............................... [WIFE & DOG FOUND]"
+        },
+        {
+            "type": "wait",
+            "ms": 800
+        },
+        {
+            "type": "instant",
+            "text": ""
+        },
+        {
+            "type": "instant",
+            "text": "Initializing USB Controllers .. Done"
+        },
+        {
+            "type": "instant",
+            "text": "Loading Network Card Interface .. Done"
+        },
+        {
+            "type": "wait",
+            "ms": 1000
+        },
+        {
+            "type": "instant",
+            "text": ""
+        },
+        {
+            "type": "instant",
+            "text": "PRESS <DEL> TO ENTER SETUP, <F11> FOR BOOT MENU"
+        },
+        {
+            "type": "wait",
+            "ms": 1500
+        },
+        {
+            "type": "clear"
+        },
+        {
+            "type": "typing",
+            "text": "Loading JP-OS....................",
+            "speed": 40
+        },
+        {
+            "type": "instant",
+            "text": "Checking for updates................ [NONE]"
+        },
+        {
+            "type": "instant",
+            "text": "Mounting /dev/desktop............... [OK]"
+        },
+        {
+            "type": "instant",
+            "text": "Initializing User Interface......... [OK]"
+        },
+        {
+            "type": "wait",
+            "ms": 1000
+        },
+        {
+            "type": "clear"
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "funky-website",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "generate-manifest": "node scripts/generate-manifest.js",
+    "dev": "node scripts/generate-manifest.js --watch & vite",
+    "build": "npm run generate-manifest && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}
