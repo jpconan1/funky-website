@@ -17,7 +17,7 @@ export async function initDesktop() {
     const iconGrid = document.querySelector('#icon-grid');
 
     try {
-        const response = await fetch('./desktop-manifest.json');
+        const response = await fetch(`./desktop-manifest.json?t=${Date.now()}`);
         const files = await response.json();
 
         files.forEach(file => {
