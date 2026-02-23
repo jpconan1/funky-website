@@ -8,6 +8,37 @@ const __dirname = path.dirname(__filename);
 const DESKTOP_DIR = path.join(__dirname, '../public/desktop');
 const OUTPUT_FILE = path.join(__dirname, '../public/desktop-manifest.json');
 
+function scanDirectory(dirPath, relativePath = '') {
+    const files = fs.readdirSync(dirPath);
+    const items = [];
+
+    for (const file of files) {
+        if (file.startsWith('.')) continue; // Ignore hidden files
+
+        const fullPath = path.join(dirPath, file);
+        const stats = fs.statSync(fullPath);
+        const ext = path.extname(file).toLowerCase();
+        const isDirectory = stats.isDirectory();
+
+        const item = {
+            name: file,
+            size: stats.size,
+            modified: stats.mtime,
+            extension: isDirectory ? '' : ext,
+            type: isDirectory ? 'directory' : getFileType(ext),
+            path: relativePath ? `${relativePath}/${file}` : file
+        };
+
+        if (isDirectory) {
+            item.contents = scanDirectory(fullPath, item.path);
+        }
+
+        items.push(item);
+    }
+
+    return items;
+}
+
 function generateManifest() {
     console.log('Scanning desktop folder...');
 
@@ -15,24 +46,10 @@ function generateManifest() {
         fs.mkdirSync(DESKTOP_DIR, { recursive: true });
     }
 
-    const files = fs.readdirSync(DESKTOP_DIR);
-    const manifest = files
-        .filter(file => !file.startsWith('.')) // Ignore hidden files
-        .map(file => {
-            const stats = fs.statSync(path.join(DESKTOP_DIR, file));
-            const ext = path.extname(file).toLowerCase();
-
-            return {
-                name: file,
-                size: stats.size,
-                modified: stats.mtime,
-                extension: ext,
-                type: getFileType(ext)
-            };
-        });
+    const manifest = scanDirectory(DESKTOP_DIR);
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(manifest, null, 2));
-    console.log(`Manifest generated with ${manifest.length} files.`);
+    console.log(`Manifest generated with ${manifest.length} top-level items.`);
 }
 
 function getFileType(ext) {

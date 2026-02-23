@@ -1,4 +1,8 @@
+import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
+import { initContextMenu } from './context-menu.js';
+import { TextEditor } from './text-editor.js';
+import { getMessages } from './supabase.js';
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -33,6 +37,8 @@ export async function initDesktop() {
         new URL('./assets/blank-idle.png', import.meta.url).href,
         new URL('./assets/close.png', import.meta.url).href,
         new URL('./assets/file-boilsheet.png', import.meta.url).href,
+        new URL('./assets/folder-boilsheet.png', import.meta.url).href,
+        new URL('./assets/folder-idle.png', import.meta.url).href,
         new URL('./assets/img-boilsheet.png', import.meta.url).href,
         new URL('./assets/img-idle.png', import.meta.url).href,
         new URL('./assets/pdf-boilsheet.png', import.meta.url).href,
@@ -50,6 +56,7 @@ export async function initDesktop() {
     const preloading = preloadAssets(assetsToPreload);
 
     const wm = new WindowManager();
+    const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
     document.title = "Retro Desktop";
 
     // Wait for critical assets before starting sequence
@@ -134,6 +141,9 @@ export async function initDesktop() {
     const startButton = document.querySelector('.start-button');
     const startMenu = document.querySelector('#start-menu');
     const bgVideo = document.querySelector('.desktop-bg-video');
+    const desktop = document.querySelector('#desktop');
+
+    initContextMenu(desktop, () => textEditor.openNewFile());
 
     // Fade in background video immediately since it's preloaded
     if (bgVideo) bgVideo.style.opacity = '0.6';
@@ -199,11 +209,230 @@ export async function initDesktop() {
         e.stopPropagation();
     });
 
-    // Close menu when clicking elsewhere
-    document.addEventListener('click', () => {
-        startButton.classList.remove('active');
-        startMenu.classList.remove('visible');
+    // Physics Engine Setup
+    const Engine = Matter.Engine,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        Mouse = Matter.Mouse,
+        MouseConstraint = Matter.MouseConstraint,
+        Events = Matter.Events,
+        Runner = Matter.Runner;
+
+    const engine = Engine.create();
+    engine.gravity.y = 0; // No gravity for icons
+    engine.gravity.x = 0;
+
+    const runner = Runner.create();
+    Runner.run(runner, engine);
+
+    const iconPairs = [];
+    const walls = [];
+
+    function updateWalls() {
+        const width = iconGrid.clientWidth;
+        const height = iconGrid.clientHeight;
+        const thickness = 1000;
+
+        Composite.remove(engine.world, walls);
+        walls.length = 0;
+
+        const wallTable = [
+            Bodies.rectangle(width / 2, -thickness / 2, width + thickness * 2, thickness, { isStatic: true }), // Top
+            Bodies.rectangle(width / 2, height + thickness / 2, width + thickness * 2, thickness, { isStatic: true }), // Bottom
+            Bodies.rectangle(-thickness / 2, height / 2, thickness, height + thickness * 2, { isStatic: true }), // Left
+            Bodies.rectangle(width + thickness / 2, height / 2, thickness, height + thickness * 2, { isStatic: true }) // Right
+        ];
+
+        walls.push(...wallTable);
+        walls.forEach(wall => wall.restitution = 0.5);
+        Composite.add(engine.world, walls);
+    }
+
+    // Mouse constraints for dragging
+    const mouse = Mouse.create(iconGrid);
+    const mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+            stiffness: 0.2,
+            render: { visible: false }
+        }
     });
+    Composite.add(engine.world, mouseConstraint);
+
+    // Update cursor during drag
+    Events.on(mouseConstraint, 'startdrag', (event) => {
+        if (event.body) {
+            event.body.element.classList.add('dragging');
+        }
+    });
+    Events.on(mouseConstraint, 'enddrag', (event) => {
+        if (event.body) {
+            event.body.element.classList.remove('dragging');
+        }
+    });
+
+    // Sync physics bodies with DOM elements
+    Events.on(engine, 'afterUpdate', () => {
+        const width = iconGrid.clientWidth;
+        const height = iconGrid.clientHeight;
+        const margin = 200;
+
+        iconPairs.forEach(({ element, body }) => {
+            const { x, y } = body.position;
+
+            // OOB check - respawn if somehow escaped the thick walls
+            if (x < -margin || x > width + margin || y < -margin || y > height + margin) {
+                Matter.Body.setPosition(body, {
+                    x: Math.random() * width,
+                    y: Math.random() * height
+                });
+                Matter.Body.setVelocity(body, { x: 0, y: 0 });
+            }
+
+            // Subtract half width/height to center the element on the body
+            element.style.left = `${x - 50}px`;
+            element.style.top = `${y - 60}px`; // Icons are roughly 100x120
+            element.style.transform = `rotate(${body.angle}rad)`;
+        });
+    });
+
+    window.addEventListener('resize', updateWalls);
+    setTimeout(updateWalls, 0); // Initial walls setup
+
+    // Close menu and deselect icons when clicking elsewhere
+    document.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('.icon')) {
+            document.querySelectorAll('.icon.selected').forEach(icon => icon.classList.remove('selected'));
+        }
+        if (!e.target.closest('.start-button') && !e.target.closest('#start-menu')) {
+            startButton.classList.remove('active');
+            startMenu.classList.remove('visible');
+        }
+    });
+
+    function formatFileName(name) {
+        if (!name) return '';
+        const MAX_FILENAME_LENGTH = 64; // Recommended max length for display
+        let displayName = name;
+        if (name.length > MAX_FILENAME_LENGTH) {
+            displayName = name.substring(0, MAX_FILENAME_LENGTH - 3) + '...';
+        }
+        // Inject word break opportunities after spaces, hyphens, periods, and underscores
+        return displayName.replace(/([ \-._])/g, '$1<wbr>');
+    }
+
+    function createIcon(file, initialX, initialY) {
+        const icon = document.createElement('div');
+        icon.className = 'icon';
+        icon.innerHTML = `
+            ${file.isCloud ? '<div class="cloud-badge">CLOUD</div>' : ''}
+            <div class="icon-image">${getIconSymbol(file)}</div>
+            <div class="icon-label">${formatFileName(file.name)}</div>
+        `;
+
+        // Physics Body
+        const width = 100;
+        const height = 120;
+
+        // Use provided position or fallback to random
+        const x = initialX !== undefined ? initialX : (Math.random() * (iconGrid.clientWidth - width) + width / 2);
+        const y = initialY !== undefined ? initialY : (Math.random() * (iconGrid.clientHeight - height) + height / 2);
+
+        const body = Bodies.rectangle(x, y, width, height, {
+            frictionAir: 0.1,
+            restitution: 0.3,
+            inertia: Infinity, // Prevent rotation if desired, or let it rotate?
+            // User said "bump and collide", rotation might be fun. 
+            // I'll keep default rotation for now or set high inertia to keep it mostly upright
+        });
+
+        // Actually, let's keep rotation but maybe slow it down
+        body.friction = 0.1;
+        body.element = icon; // Store reference for events
+
+        Composite.add(engine.world, body);
+        iconPairs.push({ element: icon, body });
+
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Deselect others
+            document.querySelectorAll('.icon.selected').forEach(el => {
+                if (el !== icon) el.classList.remove('selected');
+            });
+            icon.classList.add('selected');
+        });
+
+        icon.addEventListener('dblclick', async (e) => {
+            e.stopPropagation();
+            console.log(`Opening ${file.name}`);
+            const ext = (file.extension || '').toLowerCase();
+
+            if (file.type === 'cloud_file' || file.isCloud) {
+                const content = `<div class="txt-content">${file.content}</div>`;
+                wm.createWindow(file.name, content);
+            } else if (file.type === 'directory') {
+                const grid = document.createElement('div');
+                grid.className = 'window-icon-grid';
+                if (file.contents && file.contents.length > 0) {
+                    file.contents.forEach(child => {
+                        // For simplicity, icons inside windows don't have physics for now
+                        // as they are in a different container (window-icon-grid)
+                        const subIcon = document.createElement('div');
+                        subIcon.className = 'icon';
+                        subIcon.innerHTML = `
+                            <div class="icon-image">${getIconSymbol(child)}</div>
+                            <div class="icon-label">${formatFileName(child.name)}</div>
+                        `;
+                        grid.appendChild(subIcon);
+                    });
+                } else {
+                    grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">This folder is empty.</p>';
+                }
+                wm.createWindow(file.name, grid);
+            } else if (ext === '.txt') {
+                try {
+                    const response = await fetch(`./desktop/${encodeURIComponent(file.path)}`);
+                    if (response.ok) {
+                        const text = await response.text();
+                        const content = `<div class="txt-content">${text}</div>`;
+                        wm.createWindow(file.name, content);
+                    } else {
+                        wm.createWindow(file.name, `<p>Error loading file: ${file.name}</p>`);
+                    }
+                } catch (error) {
+                    console.error('Error opening text file:', error);
+                    wm.createWindow(file.name, `<p>Error opening file: ${file.name}</p>`);
+                }
+            } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
+                const content = `
+                    <div class="img-content">
+                        <img src="./desktop/${encodeURIComponent(file.path)}" alt="${file.name}" />
+                    </div>
+                `;
+                wm.createWindow(file.name, content);
+            } else {
+                const content = `<p>This is the content of <strong>${file.name}</strong>.</p><p>Type: ${file.type}</p><p>Window manager is now active!</p>`;
+                wm.createWindow(file.name, content);
+            }
+        });
+        return icon;
+    }
+
+    function getGridPosition(index) {
+        const colWidth = 110;
+        const rowHeight = 130;
+        const paddingX = 20;
+        const paddingY = 20;
+        const cols = Math.max(1, Math.floor((iconGrid.clientWidth - paddingX * 2) / colWidth));
+
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+
+        return {
+            x: paddingX + col * colWidth + 50,
+            y: paddingY + row * rowHeight + 60
+        };
+    }
 
     // Start loading icons immediately in background
     const loadIcons = (async () => {
@@ -211,42 +440,51 @@ export async function initDesktop() {
             const response = await fetch(`./desktop-manifest.json?t=${Date.now()}`);
             const files = await response.json();
 
-            files.forEach(file => {
-                const icon = document.createElement('div');
-                icon.className = 'icon';
-                icon.innerHTML = `
-            <div class="icon-image">${getIconSymbol(file)}</div>
-            <div class="icon-label">${file.name}</div>
-          `;
-                icon.addEventListener('click', async () => {
-                    console.log(`Opening ${file.name}`);
-                    const ext = (file.extension || '').toLowerCase();
-
-                    if (ext === '.txt') {
-                        try {
-                            const response = await fetch(`./desktop/${encodeURIComponent(file.name)}`);
-                            if (response.ok) {
-                                const text = await response.text();
-                                const content = `<div class="txt-content">${text}</div>`;
-                                wm.createWindow(file.name, content);
-                            } else {
-                                wm.createWindow(file.name, `<p>Error loading file: ${file.name}</p>`);
-                            }
-                        } catch (error) {
-                            console.error('Error opening text file:', error);
-                            wm.createWindow(file.name, `<p>Error opening file: ${file.name}</p>`);
-                        }
-                    } else {
-                        const content = `<p>This is the content of <strong>${file.name}</strong>.</p><p>Type: ${file.type}</p><p>Window manager is now active!</p>`;
-                        wm.createWindow(file.name, content);
-                    }
-                });
-                iconGrid.appendChild(icon);
+            files.forEach((file, index) => {
+                const pos = getGridPosition(index);
+                iconGrid.appendChild(createIcon(file, pos.x, pos.y));
             });
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
     })();
+
+    const loadGuestbookMessages = async (isRefresh = false) => {
+        try {
+            const messages = await getMessages();
+
+            // If refreshing, we only want to add NEW messages
+            // For now, let's keep it simple: if refresh, clear all cloud icons and reload
+            if (isRefresh) {
+                // Remove physics bodies and DOM elements for cloud icons
+                const cloudPairs = iconPairs.filter(p => p.element.querySelector('.cloud-badge'));
+                cloudPairs.forEach(p => {
+                    Composite.remove(engine.world, p.body);
+                    p.element.remove();
+                });
+                // Update iconPairs array
+                const remainingPairs = iconPairs.filter(p => !p.element.querySelector('.cloud-badge'));
+                iconPairs.length = 0;
+                iconPairs.push(...remainingPairs);
+            }
+
+            messages.forEach((msg, index) => {
+                const file = {
+                    id: msg.id, // Store ID for deduplication later if needed
+                    name: msg.filename || 'message.txt',
+                    extension: '.txt',
+                    type: 'cloud_file',
+                    content: msg.content,
+                    isCloud: true
+                };
+
+                const pos = getGridPosition(iconPairs.length);
+                iconGrid.appendChild(createIcon(file, pos.x, pos.y));
+            });
+        } catch (error) {
+            console.warn('Failed to load guestbook messages:', error);
+        }
+    };
 
     // Staggered sequence
     // 1. BG is already visible (0 beats)
@@ -258,6 +496,7 @@ export async function initDesktop() {
     // 3. Wait 1 beat then show icons
     await new Promise(r => setTimeout(r, beat * 1));
     await loadIcons; // Ensure icons are fetched before showing grid
+    await loadGuestbookMessages(); // Fetch cloud messages
     iconGrid.style.visibility = 'visible';
 
     // Simple clock
@@ -280,6 +519,9 @@ function getSpriteHTML(className, frames = 3) {
 function getIconSymbol(file) {
     const ext = (file.extension || '').toLowerCase();
 
+    if (file.type === 'directory') {
+        return getSpriteHTML('icon-folder');
+    }
     if (ext === '.pdf') {
         return getSpriteHTML('icon-pdf');
     }
@@ -293,4 +535,3 @@ function getIconSymbol(file) {
     // Default or other types
     return getSpriteHTML('icon-file');
 }
-

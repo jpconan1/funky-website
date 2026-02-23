@@ -140,27 +140,38 @@ body {
 }
 
 #icon-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 120px);
-  grid-auto-rows: 120px;
-  gap: 20px;
+  position: relative;
   flex: 1;
+  width: 100%;
+  height: 100%;
 }
 
 .icon {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   cursor: pointer;
   padding: 10px;
   border: 1px solid transparent;
   user-select: none;
+  width: 100px;
+  height: 120px;
+  box-sizing: border-box;
+  text-align: center;
 }
 
-.icon:hover {
+.icon.selected {
   background-color: rgba(238, 241, 219, 0.1);
   border: 1px dashed var(--bios-text);
+  z-index: 10;
+}
+
+.icon.dragging {
+  cursor: grabbing !important;
+  z-index: 100;
+  opacity: 0.8;
 }
 
 
@@ -177,11 +188,48 @@ body {
 
 .icon-label {
   font-size: 0.9rem;
+  line-height: 1.2;
   text-align: center;
-  word-break: break-all;
+  overflow-wrap: anywhere;
   color: var(--bios-text);
   padding: 2px 4px;
   background-color: rgba(0, 0, 0, 0.5);
+  max-height: 1.1em;
+  /* Limit to exactly 1 line and prevent peeking */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.icon.selected .icon-label {
+  max-height: none;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  display: block;
+  overflow: visible;
+  background-color: rgba(0, 0, 0, 0.82);
+  border-radius: 2px;
+  position: relative;
+  z-index: 100;
+}
+
+/* Cloud Badge */
+.cloud-badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 0.7rem;
+  background: #0088ff;
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: bold;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+  pointer-events: none;
 }
 
 /* Generic Sprite System */
@@ -196,7 +244,8 @@ body {
   display: inline-block;
 }
 
-.icon:hover .sprite {
+.icon:hover .sprite,
+.icon.selected .sprite {
   background-size: calc(var(--size) * var(--frames)) var(--size);
   animation: boil-animation 0.4s steps(var(--frames)) infinite;
 }
@@ -215,7 +264,8 @@ body {
   background-image: url('./assets/blank-idle.png');
 }
 
-.icon:hover .icon-file {
+.icon:hover .icon-file,
+.icon.selected .icon-file {
   background-image: url('./assets/file-boilsheet.png');
 }
 
@@ -223,7 +273,8 @@ body {
   background-image: url('./assets/pdf-idle.png');
 }
 
-.icon:hover .icon-pdf {
+.icon:hover .icon-pdf,
+.icon.selected .icon-pdf {
   background-image: url('./assets/pdf-boilsheet.png');
 }
 
@@ -231,7 +282,8 @@ body {
   background-image: url('./assets/img-idle.png');
 }
 
-.icon:hover .icon-img {
+.icon:hover .icon-img,
+.icon.selected .icon-img {
   background-image: url('./assets/img-boilsheet.png');
 }
 
@@ -239,8 +291,18 @@ body {
   background-image: url('./assets/txt-idle.png');
 }
 
-.icon:hover .icon-txt {
+.icon:hover .icon-txt,
+.icon.selected .icon-txt {
   background-image: url('./assets/txt-boilsheet.png');
+}
+
+.icon-folder {
+  background-image: url('./assets/folder-idle.png');
+}
+
+.icon:hover .icon-folder,
+.icon.selected .icon-folder {
+  background-image: url('./assets/folder-boilsheet.png');
 }
 
 #taskbar {
@@ -694,6 +756,22 @@ body {
   word-wrap: break-word;
 }
 
+.img-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.img-content img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .window-resize-handle {
   position: absolute;
   right: 0;
@@ -707,4 +785,165 @@ body {
 
 .window-resize-handle:hover {
   background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.6) 50%);
+}
+
+.window-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 100px);
+  grid-auto-rows: 140px;
+  gap: 15px;
+  padding: 10px;
+}
+
+.window-icon-grid .icon {
+  position: static;
+  width: 100px;
+  height: 100px;
+  padding: 5px;
+}
+
+.window-icon-grid .icon-image {
+  width: 48px;
+  height: 48px;
+}
+
+.window-icon-grid .sprite {
+  --size: 48px;
+}
+
+.window-icon-grid .icon-label {
+  font-size: 0.8rem;
+}
+
+/* Context Menu */
+#context-menu {
+  min-width: 180px;
+  background: rgba(1, 48, 30, 0.9);
+  border: 1px solid rgba(238, 241, 219, 0.3);
+  padding: 5px 0;
+  border-radius: 4px;
+  box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.5);
+  font-family: var(--desktop-font);
+}
+
+.context-menu-item {
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--bios-text);
+  transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+  background: var(--bios-text);
+  color: var(--bios-bg);
+}
+
+.menu-icon {
+  font-size: 1rem;
+}
+
+/* Text Editor App */
+.text-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 10px;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: rgba(238, 241, 219, 0.1);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.editor-filename-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(238, 241, 219, 0.3);
+  color: var(--bios-text);
+  padding: 5px 10px;
+  font-family: var(--bios-font);
+  border-radius: 2px;
+}
+
+.editor-save-btn {
+  background: var(--bios-text);
+  color: var(--bios-bg);
+  border: 1px solid var(--bios-text);
+  padding: 5px 15px;
+  font-family: var(--desktop-font);
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+.editor-save-btn:hover {
+  background: transparent;
+  color: var(--bios-text);
+}
+
+#editor-textarea {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(238, 241, 219, 0.2);
+  color: var(--bios-text);
+  padding: 15px;
+  font-family: var(--bios-font);
+  font-size: 1.1rem;
+  resize: none;
+  border-radius: 4px;
+  outline: none;
+}
+
+#editor-textarea:focus {
+  border-color: rgba(238, 241, 219, 0.5);
+}
+
+.editor-status {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-family: var(--bios-font);
+}
+
+.editor-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 5px;
+}
+
+.privacy-notice {
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+}
+
+.privacy-notice a {
+  color: var(--bios-text);
+  text-decoration: underline;
+}
+
+.privacy-policy-content {
+  padding: 10px;
+}
+
+.privacy-policy-content h2 {
+  margin-top: 0;
+  color: var(--bios-text);
+}
+
+.privacy-policy-content p {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin-bottom: 12px;
 }

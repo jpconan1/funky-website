@@ -49,11 +49,16 @@ export class WindowManager {
                     <span class="window-title">${title}</span>
                 </div>
             </div>
-            <div class="window-content">
-                ${contentHTML}
-            </div>
+            <div class="window-content"></div>
             <div class="window-resize-handle"></div>
         `;
+
+        const contentArea = win.querySelector('.window-content');
+        if (typeof contentHTML === 'string') {
+            contentArea.innerHTML = contentHTML;
+        } else if (contentHTML instanceof HTMLElement) {
+            contentArea.appendChild(contentHTML);
+        }
 
         this.desktop.appendChild(win);
 

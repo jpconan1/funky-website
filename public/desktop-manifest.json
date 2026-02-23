@@ -1,51 +1,61 @@
 [
   {
-    "name": "blog-post copy.exe",
-    "size": 63,
-    "modified": "2026-02-22T22:26:43.462Z",
-    "extension": ".exe",
-    "type": "unknown"
+    "name": "Projects",
+    "size": 96,
+    "modified": "2026-02-23T20:55:45.909Z",
+    "extension": "",
+    "type": "directory",
+    "path": "Projects",
+    "contents": [
+      {
+        "name": "project1.txt",
+        "size": 24,
+        "modified": "2026-02-23T20:55:45.909Z",
+        "extension": ".txt",
+        "type": "text",
+        "path": "Projects/project1.txt"
+      }
+    ]
   },
   {
-    "name": "blog-post copy.txt",
-    "size": 63,
-    "modified": "2026-02-22T22:26:43.462Z",
-    "extension": ".txt",
-    "type": "text"
+    "name": "bacon-cooked.png",
+    "size": 2204,
+    "modified": "2026-01-14T06:08:11.440Z",
+    "extension": ".png",
+    "type": "image",
+    "path": "bacon-cooked.png"
   },
   {
     "name": "blog-post.txt",
     "size": 63,
     "modified": "2026-02-22T22:26:43.462Z",
     "extension": ".txt",
-    "type": "text"
+    "type": "text",
+    "path": "blog-post.txt"
   },
   {
-    "name": "cool-image.png",
-    "size": 26,
-    "modified": "2026-02-22T22:34:52.854Z",
+    "name": "grill_sheet.png",
+    "size": 10334,
+    "modified": "2026-02-01T23:52:17.788Z",
     "extension": ".png",
-    "type": "image"
+    "type": "image",
+    "path": "grill_sheet.png"
   },
   {
-    "name": "resume copy 2.pdf",
-    "size": 54,
-    "modified": "2026-02-22T22:35:32.989Z",
-    "extension": ".pdf",
-    "type": "document"
+    "name": "portrait copy.jpg",
+    "size": 325114,
+    "modified": "2026-02-05T18:20:36.730Z",
+    "extension": ".jpg",
+    "type": "image",
+    "path": "portrait copy.jpg"
   },
   {
-    "name": "resume copy.pdf",
-    "size": 54,
-    "modified": "2026-02-22T22:35:32.989Z",
-    "extension": ".pdf",
-    "type": "document"
-  },
-  {
-    "name": "resume.pdf",
-    "size": 54,
-    "modified": "2026-02-22T22:35:32.989Z",
-    "extension": ".pdf",
-    "type": "document"
+    "name": "untitled folder",
+    "size": 64,
+    "modified": "2026-02-23T20:49:29.209Z",
+    "extension": "",
+    "type": "directory",
+    "path": "untitled folder",
+    "contents": []
   }
 ]
