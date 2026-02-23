@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseKey) {
     console.warn('Supabase URL or Key missing. Guestbook features will not work.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 export async function saveMessage(fileName, content) {
     const sanitizedContent = DOMPurify.sanitize(content);
