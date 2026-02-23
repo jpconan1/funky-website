@@ -29,20 +29,21 @@ export async function initDesktop() {
     const beat = 150;
 
     const assetsToPreload = [
-        './assets/bg-waves.mp4',
-        './assets/blank-idle.png',
-        './assets/close.png',
-        './assets/file-boilsheet.png',
-        './assets/img-boilsheet.png',
-        './assets/img-idle.png',
-        './assets/pdf-boilsheet.png',
-        './assets/pdf-idle.png',
-        './assets/txt-boilsheet.png',
-        './assets/txt-idle.png',
-        './assets/start-menu/start-box.png',
-        './assets/start-menu/start-hovered.png',
-        './assets/start-menu/start-idle.png',
-        './assets/start-menu/start-selected.png'
+        '/assets/bg-waves.mp4',
+        '/assets/blank-idle.png',
+        '/assets/close.png',
+        '/assets/file-boilsheet.png',
+        '/assets/img-boilsheet.png',
+        '/assets/img-idle.png',
+        '/assets/pdf-boilsheet.png',
+        '/assets/pdf-idle.png',
+        '/assets/txt-boilsheet.png',
+        '/assets/txt-idle.png',
+        '/assets/start-menu/start-box.png',
+        '/assets/start-menu/start-hovered.png',
+        '/assets/start-menu/start-idle.png',
+        '/assets/start-menu/start-selected.png',
+        '/assets/start-menu/portrait.jpg'
     ];
 
     // Start preloading immediately
@@ -58,7 +59,7 @@ export async function initDesktop() {
     app.innerHTML = `
     <div id="desktop">
       <video class="desktop-bg-video" autoplay muted loop playsinline style="opacity: 0; transition: opacity 1s ease-in">
-        <source src="./assets/bg-waves.mp4" type="video/mp4">
+        <source src="/assets/bg-waves.mp4" type="video/mp4">
       </video>
       <div class="desktop-overlay"></div>
       <div id="icon-grid" style="visibility: hidden"></div>
@@ -84,7 +85,7 @@ export async function initDesktop() {
                       <p>During my 20s, I hiked across the US and traveled around my home country of Canada. I worked in kitchens, planted trees, and generally avoided growing up as long as possible. That got old, so now I’m back home, building a family and starting my career. I got married to the love of my life in December of 2025.</p>
                       <p>I graduated from Red River College’s Creative Communications program, also in 2025, specializing in Advertising.</p>
                       <p>I’m currently chasing down a new dream: Releasing a game on Steam. You can play an in-development version of my game Burger Joint right now - just click the icon on the desktop. and leave me some feedback, will you??</p>
-                      <img src="./assets/start-menu/portrait.jpg" class="submenu-portrait" />
+                      <img src="/assets/start-menu/portrait.jpg" class="submenu-portrait" />
                     </div>
                   </div>
                 </div>

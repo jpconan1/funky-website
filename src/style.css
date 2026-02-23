@@ -212,35 +212,35 @@ body {
 }
 
 .icon-file {
-  background-image: url('./assets/blank-idle.png');
+  background-image: url('/assets/blank-idle.png');
 }
 
 .icon:hover .icon-file {
-  background-image: url('./assets/file-boilsheet.png');
+  background-image: url('/assets/file-boilsheet.png');
 }
 
 .icon-pdf {
-  background-image: url('./assets/pdf-idle.png');
+  background-image: url('/assets/pdf-idle.png');
 }
 
 .icon:hover .icon-pdf {
-  background-image: url('./assets/pdf-boilsheet.png');
+  background-image: url('/assets/pdf-boilsheet.png');
 }
 
 .icon-img {
-  background-image: url('./assets/img-idle.png');
+  background-image: url('/assets/img-idle.png');
 }
 
 .icon:hover .icon-img {
-  background-image: url('./assets/img-boilsheet.png');
+  background-image: url('/assets/img-boilsheet.png');
 }
 
 .icon-txt {
-  background-image: url('./assets/txt-idle.png');
+  background-image: url('/assets/txt-idle.png');
 }
 
 .icon:hover .icon-txt {
-  background-image: url('./assets/txt-boilsheet.png');
+  background-image: url('/assets/txt-boilsheet.png');
 }
 
 #taskbar {
@@ -263,7 +263,7 @@ body {
 .start-button {
   width: 96px;
   height: 32px;
-  background-image: url('./assets/start-menu/start-idle.png');
+  background-image: url('/assets/start-menu/start-idle.png');
   background-size: contain;
   background-repeat: no-repeat;
   cursor: pointer;
@@ -272,11 +272,11 @@ body {
 }
 
 .start-button:hover {
-  background-image: url('./assets/start-menu/start-hovered.png');
+  background-image: url('/assets/start-menu/start-hovered.png');
 }
 
 .start-button.active {
-  background-image: url('./assets/start-menu/start-selected.png');
+  background-image: url('/assets/start-menu/start-selected.png');
 }
 
 #start-menu {
@@ -290,7 +290,7 @@ body {
   /* 9-slice scaling */
   border-style: solid;
   border-width: 48px;
-  border-image-source: url('./assets/start-menu/start-box.png');
+  border-image-source: url('/assets/start-menu/start-box.png');
   border-image-slice: 120 fill;
   border-image-repeat: stretch;
 
@@ -401,7 +401,7 @@ body {
 
   border-style: solid;
   border-width: 48px;
-  border-image-source: url('./assets/start-menu/submenu-box.png');
+  border-image-source: url('/assets/start-menu/submenu-box.png');
   border-image-slice: 120 fill;
   border-image-repeat: stretch;
 
@@ -656,7 +656,7 @@ body {
   width: 24px;
   height: 24px;
   border: none;
-  background: url('./assets/close.png') no-repeat center center;
+  background: url('/assets/close.png') no-repeat center center;
   background-size: contain;
   cursor: pointer;
   transition: transform 0.1s;
