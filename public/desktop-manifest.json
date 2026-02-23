@@ -1,5 +1,12 @@
 [
   {
+    "name": "blog-post copy.exe",
+    "size": 63,
+    "modified": "2026-02-22T22:26:43.462Z",
+    "extension": ".exe",
+    "type": "unknown"
+  },
+  {
     "name": "blog-post copy.txt",
     "size": 63,
     "modified": "2026-02-22T22:26:43.462Z",
@@ -21,17 +28,24 @@
     "type": "image"
   },
   {
-    "name": "readme.md",
-    "size": 101,
-    "modified": "2026-02-22T22:26:47.980Z",
-    "extension": ".md",
-    "type": "text"
-  },
-  {
-    "name": "resume.txt",
+    "name": "resume copy 2.pdf",
     "size": 54,
     "modified": "2026-02-22T22:35:32.989Z",
-    "extension": ".txt",
-    "type": "text"
+    "extension": ".pdf",
+    "type": "document"
+  },
+  {
+    "name": "resume copy.pdf",
+    "size": 54,
+    "modified": "2026-02-22T22:35:32.989Z",
+    "extension": ".pdf",
+    "type": "document"
+  },
+  {
+    "name": "resume.pdf",
+    "size": 54,
+    "modified": "2026-02-22T22:35:32.989Z",
+    "extension": ".pdf",
+    "type": "document"
   }
 ]
