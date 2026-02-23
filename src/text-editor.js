@@ -6,6 +6,7 @@ export class TextEditor {
         this.onSaveSuccess = onSaveSuccess;
     }
 
+
     openNewFile() {
         const content = document.createElement('div');
         content.className = 'text-editor-container';
