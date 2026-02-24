@@ -128,7 +128,7 @@ export class PixelArt {
             <div class="editor-footer">
                 <div class="privacy-notice">
                     <input type="checkbox" id="pixel-privacy-agreement" />
-                    <label for="pixel-privacy-agreement">Public Artwork: <span>Permanent once saved.</span></label>
+                    <label for="pixel-privacy-agreement">Public Artwork: <a href="#" id="view-pixel-privacy">Privacy Policy</a></label>
                 </div>
                 <div class="editor-status" id="pixel-status">Ready</div>
             </div>
@@ -151,6 +151,20 @@ export class PixelArt {
         const resizeBtn = content.querySelector('#resize-btn');
         const status = content.querySelector('#pixel-status');
         const privacyCheckbox = content.querySelector('#pixel-privacy-agreement');
+        const viewPrivacyLink = content.querySelector('#view-pixel-privacy');
+
+        viewPrivacyLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.wm.createWindow('Privacy Policy', `
+                <div class="privacy-policy-content">
+                    <h2>Privacy Policy</h2>
+                    <p>This website allows you to post public messages and pictures.</p>
+                    <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
+                    <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information. Don't draw anything unsuitable for a general audience.</p>
+                    <p><strong>Removing your information:</strong> Once a message is saved, it cannot be edited. Eventually it will go in the bin, where eventually it will disappear, unless I like your message or picture and choose to manually save it and display it. If you'd like me to remove something urgently or remove something I've saved, email me at jeanpaulconan at gmail dot com and I will take your information down.</p>
+                </div>
+            `);
+        });
         const toolBtns = content.querySelectorAll('.tool-btn');
         const shapeBtns = content.querySelectorAll('.shape-btn');
         const strokeSlider = content.querySelector('#stroke-size-slider');

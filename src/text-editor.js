@@ -113,10 +113,10 @@ export class TextEditor {
             this.wm.createWindow('Privacy Policy', `
                 <div class="privacy-policy-content">
                     <h2>Privacy Policy</h2>
-                    <p>This guestbook allows you to post public messages.</p>
+                    <p>This website allows you to post public messages and pictures.</p>
                     <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
-                    <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information.</p>
-                    <p><strong>Ink on Paper:</strong> Once a message is saved, it cannot be edited. It becomes a permanent part of the guestbook.</p>
+                    <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information. Don't draw anything unsuitable for a general audience.</p>
+                    <p><strong>Removing your information:</strong> Once a message is saved, it cannot be edited. Eventually it will go in the bin, where eventually it will disappear, unless I like your message or picture and choose to manually save it and display it. If you'd like me to remove something urgently or remove something I've saved, email me at jeanpaulconan at gmail dot com and I will take your information down.</p>
                 </div>
             `);
         });

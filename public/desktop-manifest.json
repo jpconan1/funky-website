@@ -1,77 +1,18 @@
 [
   {
-    "name": "Projects",
-    "size": 256,
-    "modified": "2026-02-24T05:12:38.962Z",
-    "extension": "",
-    "type": "directory",
-    "path": "Projects",
-    "contents": [
-      {
-        "name": "blog-post copy.txt",
-        "size": 63,
-        "modified": "2026-02-22T22:26:43.462Z",
-        "extension": ".txt",
-        "type": "text",
-        "path": "Projects/blog-post copy.txt"
-      },
-      {
-        "name": "portrait copy.jpg",
-        "size": 325114,
-        "modified": "2026-02-05T18:20:36.730Z",
-        "extension": ".jpg",
-        "type": "image",
-        "path": "Projects/portrait copy.jpg"
-      },
-      {
-        "name": "project1 copy.txt",
-        "size": 28,
-        "modified": "2026-02-24T04:20:20.156Z",
-        "extension": ".txt",
-        "type": "text",
-        "path": "Projects/project1 copy.txt"
-      },
-      {
-        "name": "project1.txt",
-        "size": 28,
-        "modified": "2026-02-24T04:20:20.156Z",
-        "extension": ".txt",
-        "type": "text",
-        "path": "Projects/project1.txt"
-      },
-      {
-        "name": "untitled folder",
-        "size": 64,
-        "modified": "2026-02-23T20:49:29.209Z",
-        "extension": "",
-        "type": "directory",
-        "path": "Projects/untitled folder",
-        "contents": []
-      }
-    ]
-  },
-  {
-    "name": "bacon-cooked.png",
-    "size": 2204,
-    "modified": "2026-01-14T06:08:11.440Z",
-    "extension": ".png",
-    "type": "image",
-    "path": "bacon-cooked.png"
-  },
-  {
-    "name": "blog-post.txt",
-    "size": 63,
-    "modified": "2026-02-22T22:26:43.462Z",
+    "name": "blog.txt",
+    "size": 201,
+    "modified": "2026-02-24T18:17:52.788Z",
     "extension": ".txt",
     "type": "text",
-    "path": "blog-post.txt"
+    "path": "blog.txt"
   },
   {
-    "name": "grill_sheet.png",
-    "size": 10334,
-    "modified": "2026-02-01T23:52:17.788Z",
-    "extension": ".png",
+    "name": "my_dog.jpg",
+    "size": 1011009,
+    "modified": "2026-01-19T05:49:29.000Z",
+    "extension": ".jpg",
     "type": "image",
-    "path": "grill_sheet.png"
+    "path": "my_dog.jpg"
   }
 ]

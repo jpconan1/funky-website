@@ -819,7 +819,7 @@ export async function initDesktop() {
     chime.play().catch(e => console.log('Startup chime blocked:', e));
 
     // Show welcome alert
-    wm.alert('Welcome to JP-OS!');
+    wm.alert("Welcome to my website! Please take a look around. I don't have a guestbook, but you can right click the desktop and leave a note or draw a picture! It'll show up for everyone else! And if things get too cluttered, can you bin some old stuff? Thanks!");
 
     // Simple clock
     function updateClock() {
