@@ -61,6 +61,31 @@ export async function binMessage(messageId) {
     return updated;
 }
 
+export async function restoreMessage(messageId) {
+    if (!supabase) return;
+    console.log(`Restoring message: ${messageId}`);
+
+    const { data: restored, error } = await supabase.rpc('restore_message', { message_id: messageId });
+
+    if (error) {
+        console.warn('RPC restoration failed:', error);
+        // Fallback to direct update if RPC fails
+        const { data: updateData, error: updateError } = await supabase
+            .from('messages')
+            .update({ is_binned: false })
+            .eq('id', messageId)
+            .select();
+
+        if (updateError) {
+            console.error('Direct restoration failed:', updateError);
+            throw updateError;
+        }
+        return updateData;
+    }
+
+    return restored;
+}
+
 export async function deleteMessagePermanently(messageId) {
     if (!supabase) return;
 

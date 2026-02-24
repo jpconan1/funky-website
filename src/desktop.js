@@ -2,7 +2,7 @@ import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage } from './supabase.js';
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -551,9 +551,24 @@ export async function initDesktop() {
                     });
                 }
 
-                subIcon.addEventListener('dblclick', (e) => {
+                subIcon.addEventListener('dblclick', async (e) => {
                     e.stopPropagation();
-                    alert("You can't open files in the bin! They are trashed.");
+                    try {
+                        subIcon.style.opacity = '0.5';
+                        subIcon.style.pointerEvents = 'none';
+                        await restoreMessage(msg.id);
+                        subIcon.remove();
+                        if (grid.children.length === 0) {
+                            grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">The Bin is empty.</p>';
+                        }
+                        // Refresh the desktop to show the restored file
+                        await loadGuestbookMessages(true);
+                    } catch (error) {
+                        console.error('Failed to restore message:', error);
+                        subIcon.style.opacity = '1';
+                        subIcon.style.pointerEvents = 'auto';
+                        alert('Failed to restore: ' + error.message);
+                    }
                 });
 
                 grid.appendChild(subIcon);
