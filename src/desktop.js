@@ -3,6 +3,7 @@ import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
 import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage } from './supabase.js';
+import { Sailor } from './sailor.js';
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -67,6 +68,8 @@ export async function initDesktop() {
 
     const wm = new WindowManager();
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
+    const sailor = new Sailor(wm);
+
     document.title = "Retro Desktop";
 
     // Wait for critical assets before starting sequence
@@ -229,8 +232,13 @@ export async function initDesktop() {
         Runner = Matter.Runner;
 
     const engine = Engine.create();
-    engine.gravity.y = 0; // No gravity for icons
+    engine.gravity.y = 0; // Keep global gravity 0, we'll apply it selectively
     engine.gravity.x = 0;
+
+    // Collision Categories
+    const WALL_CATEGORY = 0x0001;
+    const ICON_CATEGORY = 0x0002;
+    const BIN_CATEGORY = 0x0004;
 
     const runner = Runner.create();
     Runner.run(runner, engine);
@@ -253,10 +261,22 @@ export async function initDesktop() {
         walls.length = 0;
 
         const wallTable = [
-            Bodies.rectangle(width / 2, -thickness / 2, width + thickness * 2, thickness, { isStatic: true }), // Top
-            Bodies.rectangle(width / 2, height + thickness / 2, width + thickness * 2, thickness, { isStatic: true }), // Bottom
-            Bodies.rectangle(-thickness / 2, height / 2, thickness, height + thickness * 2, { isStatic: true }), // Left
-            Bodies.rectangle(width + thickness / 2, height / 2, thickness, height + thickness * 2, { isStatic: true }) // Right
+            Bodies.rectangle(width / 2, -thickness / 2, width + thickness * 2, thickness, {
+                isStatic: true,
+                collisionFilter: { category: WALL_CATEGORY }
+            }), // Top
+            Bodies.rectangle(width / 2, height + thickness / 2, width + thickness * 2, thickness, {
+                isStatic: true,
+                collisionFilter: { category: WALL_CATEGORY }
+            }), // Bottom
+            Bodies.rectangle(-thickness / 2, height / 2, thickness, height + thickness * 2, {
+                isStatic: true,
+                collisionFilter: { category: WALL_CATEGORY }
+            }), // Left
+            Bodies.rectangle(width + thickness / 2, height / 2, thickness, height + thickness * 2, {
+                isStatic: true,
+                collisionFilter: { category: WALL_CATEGORY }
+            }) // Right
         ];
 
         walls.push(...wallTable);
@@ -328,6 +348,14 @@ export async function initDesktop() {
                 }
             }
 
+            // Apply gravity to the bin icon
+            if (binBody && body === binBody && !body.isStatic) {
+                Matter.Body.applyForce(body, body.position, {
+                    x: 0,
+                    y: 0.002 * body.mass // Gravity force
+                });
+            }
+
             // Subtract half width/height to center the element on the body
             element.style.left = `${x - 50}px`;
             element.style.top = `${y - 60}px`; // Icons are roughly 100x120
@@ -382,16 +410,7 @@ export async function initDesktop() {
         }
     });
 
-    function formatFileName(name) {
-        if (!name) return '';
-        const MAX_FILENAME_LENGTH = 64; // Recommended max length for display
-        let displayName = name;
-        if (name.length > MAX_FILENAME_LENGTH) {
-            displayName = name.substring(0, MAX_FILENAME_LENGTH - 3) + '...';
-        }
-        // Inject word break opportunities after spaces, hyphens, periods, and underscores
-        return displayName.replace(/([ \-._])/g, '$1<wbr>');
-    }
+
 
     function createIcon(file, initialX, initialY) {
         const icon = document.createElement('div');
@@ -413,9 +432,11 @@ export async function initDesktop() {
         const body = Bodies.rectangle(x, y, width, height, {
             frictionAir: 0.1,
             restitution: 0.3,
-            inertia: Infinity, // Prevent rotation if desired, or let it rotate?
-            // User said "bump and collide", rotation might be fun. 
-            // I'll keep default rotation for now or set high inertia to keep it mostly upright
+            inertia: Infinity, // Prevent rotation for icons
+            collisionFilter: {
+                category: ICON_CATEGORY,
+                mask: WALL_CATEGORY | ICON_CATEGORY // Don't collide with bin so they can be binned
+            }
         });
 
         // Actually, let's keep rotation but maybe slow it down
@@ -436,59 +457,85 @@ export async function initDesktop() {
 
         icon.addEventListener('dblclick', async (e) => {
             e.stopPropagation();
-            console.log(`Opening ${file.name}`);
-            const ext = (file.extension || '').toLowerCase();
-
-            if (file.type === 'cloud_file' || file.isCloud) {
-                const content = `<div class="txt-content">${file.content}</div>`;
-                wm.createWindow(file.name, content);
-            } else if (file.type === 'directory') {
-                const grid = document.createElement('div');
-                grid.className = 'window-icon-grid';
-                if (file.contents && file.contents.length > 0) {
-                    file.contents.forEach(child => {
-                        // For simplicity, icons inside windows don't have physics for now
-                        // as they are in a different container (window-icon-grid)
-                        const subIcon = document.createElement('div');
-                        subIcon.className = 'icon';
-                        subIcon.innerHTML = `
-                            <div class="icon-image">${getIconSymbol(child)}</div>
-                            <div class="icon-label">${formatFileName(child.name)}</div>
-                        `;
-                        grid.appendChild(subIcon);
-                    });
-                } else {
-                    grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">This folder is empty.</p>';
-                }
-                wm.createWindow(file.name, grid);
-            } else if (ext === '.txt') {
-                try {
-                    const response = await fetch(`./desktop/${encodeURIComponent(file.path)}`);
-                    if (response.ok) {
-                        const text = await response.text();
-                        const content = `<div class="txt-content">${text}</div>`;
-                        wm.createWindow(file.name, content);
-                    } else {
-                        wm.createWindow(file.name, `<p>Error loading file: ${file.name}</p>`);
-                    }
-                } catch (error) {
-                    console.error('Error opening text file:', error);
-                    wm.createWindow(file.name, `<p>Error opening file: ${file.name}</p>`);
-                }
-            } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-                const content = `
-                    <div class="img-content">
-                        <img src="./desktop/${encodeURIComponent(file.path)}" alt="${file.name}" />
-                    </div>
-                `;
-                wm.createWindow(file.name, content);
-            } else {
-                const content = `<p>This is the content of <strong>${file.name}</strong>.</p><p>Type: ${file.type}</p><p>Window manager is now active!</p>`;
-                wm.createWindow(file.name, content);
-            }
+            openFile(file);
         });
+
         return icon;
     }
+
+    function encodePath(path) {
+        return path.split('/').map(segment => encodeURIComponent(segment)).join('/');
+    }
+
+    async function openFile(file) {
+        if (!file.path && !file.isCloud && file.type !== 'directory') {
+            console.warn('File has no path and is not cloud/dir:', file);
+            return;
+        }
+
+        console.log(`Opening ${file.name} (Type: ${file.type}, Ext: ${file.extension})`);
+        const ext = (file.extension || '').toLowerCase();
+
+        // 1. Directory handling (Sailor)
+        if (file.type === 'directory' || (file.contents && Array.isArray(file.contents))) {
+            return sailor.openDirectory(file);
+        }
+
+        // 2. Text / Cloud File handling (TextEditor)
+        if (ext === '.txt' || file.isCloud || file.type === 'cloud_file') {
+            // If it's a local text file, we might need to fetch the content first
+            if (ext === '.txt' && !file.isCloud && !file.content) {
+                try {
+                    const encodedPath = encodePath(file.path);
+                    const response = await fetch(`./desktop/${encodedPath}`);
+                    if (response.ok) {
+                        file.content = await response.text();
+                    }
+                } catch (error) {
+                    console.error('Error fetching text content:', error);
+                }
+            }
+            return textEditor.open(file);
+        }
+
+        // 3. Image handling (Internal Viewer)
+        if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
+            const encodedPath = encodePath(file.path);
+            const content = `
+                <div class="img-content">
+                    <img src="./desktop/${encodedPath}" alt="${file.name}" />
+                </div>
+            `;
+            wm.createWindow(file.name, content);
+            return;
+        }
+
+        // 4. Future App Registry placeholders
+        if (ext === '.draw') {
+            // return paintApp.open(file);
+        }
+
+        if (ext === '.loop') {
+            // return synthApp.open(file);
+        }
+
+        // 5. Generic Fallback
+        const content = `
+            <div style="padding: 20px;">
+                <p>This is the content of <strong>${file.name}</strong>.</p>
+                <p>Type: ${file.type || 'Unknown'}</p>
+                <p>Path: ${file.path || 'Cloud'}</p>
+                <hr/>
+                <p>No associated app found for this file type.</p>
+            </div>
+        `;
+        wm.createWindow(file.name, content);
+    }
+
+    // Global listener for Sailor to open files
+    window.addEventListener('sailor-open-file', (e) => {
+        openFile(e.detail);
+    });
 
     function createBinIcon(initialX, initialY) {
         const bin = document.createElement('div');
@@ -501,12 +548,19 @@ export async function initDesktop() {
         const width = 100;
         const height = 120;
         const x = initialX !== undefined ? initialX : (iconGrid.clientWidth - 80);
-        const y = initialY !== undefined ? initialY : (iconGrid.clientHeight - 100);
+        // Start higher up if no initialY provided, so it falls on load
+        const y = initialY !== undefined ? initialY : 100;
 
         binBody = Bodies.rectangle(x, y, width, height, {
-            isStatic: true,
-            isSensor: true, // Don't collide physically, just detect overlap
-            render: { visible: false }
+            isStatic: false,
+            isSensor: false,
+            friction: 0.5,
+            restitution: 0.4,
+            inertia: Infinity, // Keep it upright
+            collisionFilter: {
+                category: BIN_CATEGORY,
+                mask: WALL_CATEGORY // Only collide with walls/floor
+            }
         });
         binBody.element = bin;
 
@@ -553,6 +607,15 @@ export async function initDesktop() {
 
                 subIcon.addEventListener('dblclick', async (e) => {
                     e.stopPropagation();
+
+                    const confirmed = await wm.confirm(`Are you sure you want to restore ${msg.filename}? Someone probably binned it for a reason.`, {
+                        title: 'Restore File',
+                        confirmText: 'Restore',
+                        cancelText: 'Nevermind'
+                    });
+
+                    if (!confirmed) return;
+
                     try {
                         subIcon.style.opacity = '0.5';
                         subIcon.style.pointerEvents = 'none';
@@ -567,7 +630,7 @@ export async function initDesktop() {
                         console.error('Failed to restore message:', error);
                         subIcon.style.opacity = '1';
                         subIcon.style.pointerEvents = 'auto';
-                        alert('Failed to restore: ' + error.message);
+                        wm.alert('Failed to restore: ' + error.message, 'Error');
                     }
                 });
 
@@ -631,7 +694,7 @@ export async function initDesktop() {
                 iconPairs.push(...remainingPairs);
             }
 
-            messages.forEach((msg, index) => {
+            messages.forEach((msg) => {
                 const file = {
                     id: msg.id, // Store ID for deduplication later if needed
                     name: msg.filename || 'message.txt',
@@ -666,6 +729,9 @@ export async function initDesktop() {
     const chime = new Audio('/chime.wav');
     chime.play().catch(e => console.log('Startup chime blocked:', e));
 
+    // Show welcome alert
+    wm.alert('Welcome to JP-OS!');
+
     // Simple clock
     function updateClock() {
         const clock = document.querySelector('.clock');
@@ -679,26 +745,25 @@ export async function initDesktop() {
     updateClock();
 }
 
-function getSpriteHTML(className, frames = 3) {
+export function formatFileName(name) {
+    if (!name) return '';
+    const MAX_FILENAME_LENGTH = 64;
+    let displayName = name;
+    if (name.length > MAX_FILENAME_LENGTH) {
+        displayName = name.substring(0, MAX_FILENAME_LENGTH - 3) + '...';
+    }
+    return displayName.replace(/([ \-._])/g, '$1<wbr>');
+}
+
+export function getSpriteHTML(className, frames = 3) {
     return `<div class="sprite ${className}" style="--frames: ${frames}"></div>`;
 }
 
-function getIconSymbol(file) {
+export function getIconSymbol(file) {
     const ext = (file.extension || '').toLowerCase();
-
-    if (file.type === 'directory') {
-        return getSpriteHTML('icon-folder');
-    }
-    if (ext === '.pdf') {
-        return getSpriteHTML('icon-pdf');
-    }
-    if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-        return getSpriteHTML('icon-img');
-    }
-    if (ext === '.txt') {
-        return getSpriteHTML('icon-txt');
-    }
-
-    // Default or other types
+    if (file.type === 'directory' || file.contents) return getSpriteHTML('icon-folder');
+    if (ext === '.pdf') return getSpriteHTML('icon-pdf');
+    if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') return getSpriteHTML('icon-img');
+    if (ext === '.txt') return getSpriteHTML('icon-txt');
     return getSpriteHTML('icon-file');
 }

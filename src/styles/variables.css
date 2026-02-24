@@ -1,0 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@font-face {
+    font-family: 'IBM VGA';
+    src: url('../assets/fonts/Web437_IBM_VGA_9x16.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+:root {
+    --bios-bg: #01301e;
+    --bios-text: #eef1db;
+    --bios-font: 'IBM VGA', monospace;
+    --desktop-font: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Z-Index Layers */
+    --z-desktop: 10;
+    --z-window-base: 100;
+    --z-taskbar: 1000;
+    --z-start-menu: 2000;
+    --z-submenu: 2500;
+    --z-context-menu: 3000;
+}

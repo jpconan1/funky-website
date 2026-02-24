@@ -1,0 +1,174 @@
+.window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    min-width: 200px;
+    min-height: 150px;
+    background: rgba(1, 48, 30, 0.7);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8),
+        inset 0 0 0 1px rgba(238, 241, 219, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: window-spawn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes window-spawn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.window-closing {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+    pointer-events: none;
+}
+
+.window-moving {
+    transition: none;
+    cursor: grabbing;
+}
+
+.window-resizing {
+    transition: none;
+    cursor: nwse-resize;
+}
+
+.window-header {
+    height: 36px;
+    background: rgba(238, 241, 219, 0.05);
+    border-bottom: 1px solid rgba(238, 241, 219, 0.1);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.window-header:active {
+    cursor: grabbing;
+}
+
+.window-title-bar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+    margin-right: 12px;
+}
+
+.window-close-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: url('../assets/close.png') no-repeat center center;
+    background-size: contain;
+    cursor: pointer;
+    transition: transform 0.1s;
+    image-rendering: pixelated;
+}
+
+.window-close-btn:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+}
+
+.window-title {
+    font-size: 0.9rem;
+    color: var(--bios-text);
+    font-weight: normal;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.window-content {
+    flex: 1;
+    padding: 15px;
+    overflow: auto;
+    color: var(--bios-text);
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.txt-content {
+    font-family: var(--bios-font);
+    font-size: 1rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.img-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.img-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.window-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.3) 50%);
+    z-index: 10;
+}
+
+.window-resize-handle:hover {
+    background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.6) 50%);
+}
+
+.window-icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 100px);
+    grid-auto-rows: 140px;
+    gap: 15px;
+    padding: 10px;
+}
+
+.window-icon-grid .icon {
+    position: static;
+    width: 100px;
+    height: 100px;
+    padding: 5px;
+}
+
+.window-icon-grid .icon-image {
+    width: 48px;
+    height: 48px;
+}
+
+.window-icon-grid .sprite {
+    --size: 48px;
+}
+
+.window-icon-grid .icon-label {
+    font-size: 0.8rem;
+}

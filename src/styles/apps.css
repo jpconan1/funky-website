@@ -1,0 +1,299 @@
+/* Text Editor & Viewer App */
+.text-editor-container,
+.text-viewer-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 10px;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    background: rgba(238, 241, 219, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+    flex-wrap: wrap;
+}
+
+.editor-toolbar-group {
+    display: flex;
+    gap: 2px;
+    border-right: 1px solid rgba(238, 241, 219, 0.2);
+    padding-right: 5px;
+    margin-right: 5px;
+}
+
+.editor-toolbar-group:last-child {
+    border-right: none;
+}
+
+.editor-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: var(--bios-font);
+    font-size: 0.9rem;
+    border-radius: 2px;
+}
+
+.editor-btn:hover {
+    background: rgba(238, 241, 219, 0.2);
+}
+
+.editor-btn.active {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+}
+
+.editor-select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    font-family: var(--bios-font);
+    font-size: 0.8rem;
+    padding: 2px;
+}
+
+.editor-filename-input {
+    flex: 1;
+    min-width: 150px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 5px 10px;
+    font-family: var(--bios-font);
+    border-radius: 2px;
+}
+
+.editor-save-btn {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+    border: 1px solid var(--bios-text);
+    padding: 5px 15px;
+    font-family: var(--desktop-font);
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+
+.editor-save-btn:hover:not(:disabled) {
+    background: transparent;
+    color: var(--bios-text);
+}
+
+.editor-content-area {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    color: var(--bios-text);
+    padding: 15px;
+    font-family: var(--bios-font);
+    font-size: 1.1rem;
+    border-radius: 4px;
+    outline: none;
+    overflow-y: auto;
+    line-height: 1.4;
+}
+
+.editor-content-area:focus {
+    border-color: rgba(238, 241, 219, 0.5);
+}
+
+/* Viewer specific styles */
+.viewer-content-area {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(238, 241, 219, 0.1);
+    color: var(--bios-text);
+    padding: 20px;
+    font-family: var(--bios-font);
+    font-size: 1.1rem;
+    border-radius: 4px;
+    overflow-y: auto;
+    line-height: 1.6;
+}
+
+.editor-status {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    font-family: var(--bios-font);
+}
+
+.editor-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px;
+}
+
+.privacy-notice {
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0.8;
+}
+
+.privacy-notice a {
+    color: var(--bios-text);
+    text-decoration: underline;
+}
+
+.privacy-policy-content {
+    padding: 10px;
+}
+
+.privacy-policy-content h2 {
+    margin-top: 0;
+    color: var(--bios-text);
+}
+
+.privacy-policy-content p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+/* Alert System Styles */
+.alert-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 10px;
+}
+
+.alert-message {
+    font-family: var(--desktop-font);
+    font-size: 1.1rem;
+    color: var(--bios-text);
+    line-height: 1.4;
+}
+
+.alert-actions {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.alert-ok-btn,
+.alert-confirm-btn,
+.alert-cancel-btn {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+    border: 1px solid var(--bios-text);
+    padding: 8px 24px;
+    font-family: var(--desktop-font);
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.alert-ok-btn:hover,
+.alert-confirm-btn:hover,
+.alert-cancel-btn:hover {
+    background: transparent;
+    color: var(--bios-text);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+}
+
+.alert-ok-btn:active,
+.alert-confirm-btn:active,
+.alert-cancel-btn:active {
+    transform: translateY(0);
+}
+
+/* Sailor App */
+.sailor-window .window-content {
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+.sailor-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: crosshair;
+    perspective: 1000px;
+}
+
+.sailor-icon {
+    position: absolute;
+    z-index: 10;
+    pointer-events: auto;
+    user-select: none;
+    transform-style: preserve-3d;
+}
+
+.sailor-window .icon-image {
+    filter: drop-shadow(0 15px 10px rgba(0, 0, 0, 0.4));
+    transition: filter 0.2s ease;
+}
+
+.sailor-icon:hover .icon-image {
+    filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.6)) brightness(1.2);
+}
+
+.sailor-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%) scale(0);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.ripple-large {
+    width: 100px;
+    height: 100px;
+    animation: sailor-ripple-anim 0.8s ease-out forwards;
+}
+
+.ripple-small {
+    width: 40px;
+    height: 40px;
+    animation: sailor-ripple-anim 0.5s ease-out forwards;
+}
+
+@keyframes sailor-ripple-anim {
+    0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(4);
+        opacity: 0;
+    }
+}
+
+.sailor-window .icon-label {
+    background: rgba(0, 40, 60, 0.4) !important;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    padding: 2px 6px !important;
+}
+
+.sailor-water-canvas {
+    mix-blend-mode: screen;
+}
+
+.sailor-window .icon.selected {
+    background-color: rgba(0, 200, 255, 0.1) !important;
+    border: 1px dashed rgba(0, 200, 255, 0.5) !important;
+}

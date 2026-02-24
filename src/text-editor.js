@@ -7,32 +7,106 @@ export class TextEditor {
     }
 
 
+    /**
+     * Entry point for opening a text file.
+     * Enforces the "Ink on Paper" rule: New files get the editor, existing files get the viewer.
+     */
+    open(file = null) {
+        if (file && (file.id || file.path)) {
+            return this.view(file);
+        }
+        return this.openNewFile();
+    }
+
+    /**
+     * Opens a read-only viewer for existing text files.
+     */
+    view(file) {
+        const content = document.createElement('div');
+        content.className = 'text-viewer-container';
+
+        const bodyContent = file.content || 'No content.';
+
+        content.innerHTML = `
+            <div class="editor-toolbar" style="justify-content: space-between;">
+                <div class="editor-filename-display" style="font-family: var(--bios-font); color: var(--bios-text);">${file.name}</div>
+                <div class="editor-status" style="opacity: 0.5;">Read Only</div>
+            </div>
+            <div class="viewer-content-area">${bodyContent}</div>
+        `;
+
+        return this.wm.createWindow(`Viewing: ${file.name}`, content);
+    }
+
+    /**
+     * Opens the Rich Text Editor for creating NEW messages.
+     */
     openNewFile() {
         const content = document.createElement('div');
         content.className = 'text-editor-container';
+
         content.innerHTML = `
             <div class="editor-toolbar">
+                <div class="editor-toolbar-group">
+                    <button class="editor-btn" data-command="bold" title="Bold"><b>B</b></button>
+                    <button class="editor-btn" data-command="italic" title="Italic"><i>I</i></button>
+                    <button class="editor-btn" data-command="underline" title="Underline"><u>U</u></button>
+                </div>
+                <div class="editor-toolbar-group">
+                    <select class="editor-select" data-command="fontName" title="Font">
+                        <option value="'IBM VGA'">BIOS</option>
+                        <option value="Inter">Modern</option>
+                        <option value="'Times New Roman'">Classic</option>
+                        <option value="'Brush Script MT'">Handwriting</option>
+                    </select>
+                    <select class="editor-select" data-command="fontSize" title="Size">
+                        <option value="3">Normal</option>
+                        <option value="1">Small</option>
+                        <option value="5">Large</option>
+                        <option value="7">Huge</option>
+                    </select>
+                </div>
                 <input type="text" id="file-name" placeholder="untitled.txt" class="editor-filename-input" />
                 <button id="save-btn" class="editor-save-btn">Save to Cloud</button>
             </div>
-            <textarea id="editor-textarea" placeholder="Type your message here..."></textarea>
+            <div id="editor-content" class="editor-content-area" contenteditable="true" placeholder="Type your message here..."></div>
             <div class="editor-footer">
                 <div class="privacy-notice">
                     <input type="checkbox" id="privacy-agreement" />
-                    <label for="privacy-agreement">I agree to the <a href="#" id="view-privacy">Privacy Policy</a> (messages are public)</label>
+                    <label for="privacy-agreement">Public Note: <a href="#" id="view-privacy">Privacy Policy</a></label>
                 </div>
                 <div class="editor-status" id="editor-status">Ready</div>
             </div>
         `;
 
-        const win = this.wm.createWindow('New Text File', content);
-
+        const win = this.wm.createWindow('New Text Note', content);
+        const editor = content.querySelector('#editor-content');
         const saveBtn = content.querySelector('#save-btn');
-        const textarea = content.querySelector('#editor-textarea');
         const fileNameInput = content.querySelector('#file-name');
         const status = content.querySelector('#editor-status');
         const privacyCheckbox = content.querySelector('#privacy-agreement');
         const viewPrivacyLink = content.querySelector('#view-privacy');
+
+        // Focus the editor
+        setTimeout(() => editor.focus(), 100);
+
+        // Toolbar Logic
+        content.querySelectorAll('.editor-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const command = btn.dataset.command;
+                document.execCommand(command, false, null);
+                btn.classList.toggle('active');
+                editor.focus();
+            });
+        });
+
+        content.querySelectorAll('.editor-select').forEach(select => {
+            select.addEventListener('change', () => {
+                const command = select.dataset.command;
+                document.execCommand(command, false, select.value);
+                editor.focus();
+            });
+        });
 
         viewPrivacyLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -42,37 +116,35 @@ export class TextEditor {
                     <p>This guestbook allows you to post public messages.</p>
                     <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
                     <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information.</p>
-                    <p><strong>Moderation:</strong> I reserve the right to remove any content that is offensive, illegal, or otherwise inappropriate.</p>
+                    <p><strong>Ink on Paper:</strong> Once a message is saved, it cannot be edited. It becomes a permanent part of the guestbook.</p>
                 </div>
             `);
         });
 
         saveBtn.addEventListener('click', async () => {
             const fileName = fileNameInput.value.trim() || 'untitled.txt';
-            const body = textarea.value.trim();
+            const body = editor.innerHTML.trim();
 
             if (!privacyCheckbox.checked) {
-                status.textContent = 'Please agree to the privacy policy.';
+                status.textContent = 'Please check the public note box.';
                 status.style.color = '#ffaa00';
                 return;
             }
 
-            if (!body) {
-                status.textContent = 'Cannot save empty file.';
+            if (!body || body === '<br>') {
+                status.textContent = 'Cannot save empty note.';
                 status.style.color = '#ff4444';
                 return;
             }
 
-            status.textContent = 'Saving to Cloud...';
+            status.textContent = 'Saving to Paper...';
             status.style.color = '#fff';
 
             try {
                 await saveMessage(fileName, body);
-                status.textContent = 'Saved successfully!';
+                status.textContent = 'Saved to Cloud!';
                 status.style.color = '#44ff44';
 
-                // Clear the editor after a delay or close the window?
-                // Let's just celebrate for a second.
                 setTimeout(() => {
                     this.wm.closeWindow(win);
                     if (this.onSaveSuccess) this.onSaveSuccess();
@@ -84,5 +156,7 @@ export class TextEditor {
                 status.style.color = '#ff4444';
             }
         });
+
+        return win;
     }
 }

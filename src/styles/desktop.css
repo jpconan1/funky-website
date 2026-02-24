@@ -1,0 +1,233 @@
+#desktop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 2.5rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    z-index: var(--z-desktop);
+    overflow: hidden;
+    font-family: var(--desktop-font);
+}
+
+.desktop-bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    opacity: 0.6;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
+.desktop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, transparent 20%, var(--bios-bg) 150%);
+    z-index: -1;
+    pointer-events: none;
+}
+
+#icon-grid {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.icon {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid transparent;
+    user-select: none;
+    width: 100px;
+    height: 120px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.icon.selected {
+    background-color: rgba(238, 241, 219, 0.1);
+    border: 1px dashed var(--bios-text);
+    z-index: 10;
+}
+
+.icon.dragging {
+    cursor: grabbing !important;
+    z-index: 100;
+    opacity: 0.8;
+}
+
+.icon-image {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(2px 2px 0px rgba(0, 0, 0, 0.5));
+}
+
+.icon-label {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: anywhere;
+    color: var(--bios-text);
+    padding: 2px 4px;
+    background-color: rgba(0, 0, 0, 0.5);
+    max-height: 1.1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.icon.selected .icon-label {
+    max-height: none;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    display: block;
+    overflow: visible;
+    background-color: rgba(0, 0, 0, 0.82);
+    border-radius: 2px;
+    position: relative;
+    z-index: 100;
+}
+
+.cloud-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.7rem;
+    background: #0088ff;
+    color: white;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Generic Sprite System */
+.sprite {
+    --size: 64px;
+    --frames: 3;
+    width: var(--size);
+    height: var(--size);
+    background-size: contain;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    display: inline-block;
+}
+
+.icon:hover .sprite,
+.icon.selected .sprite {
+    background-size: calc(var(--size) * var(--frames)) var(--size);
+    animation: boil-animation 0.4s steps(var(--frames)) infinite;
+}
+
+@keyframes boil-animation {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: calc(var(--size) * var(--frames) * -1) 0;
+    }
+}
+
+.icon-file {
+    background-image: url('../assets/blank-idle.png');
+}
+
+.icon:hover .icon-file,
+.icon.selected .icon-file {
+    background-image: url('../assets/file-boilsheet.png');
+}
+
+.icon-pdf {
+    background-image: url('../assets/pdf-idle.png');
+}
+
+.icon:hover .icon-pdf,
+.icon.selected .icon-pdf {
+    background-image: url('../assets/pdf-boilsheet.png');
+}
+
+.icon-img {
+    background-image: url('../assets/img-idle.png');
+}
+
+.icon:hover .icon-img,
+.icon.selected .icon-img {
+    background-image: url('../assets/img-boilsheet.png');
+}
+
+.icon-txt {
+    background-image: url('../assets/txt-idle.png');
+}
+
+.icon:hover .icon-txt,
+.icon.selected .icon-txt {
+    background-image: url('../assets/txt-boilsheet.png');
+}
+
+.icon-folder {
+    background-image: url('../assets/folder-idle.png');
+}
+
+.icon:hover .icon-folder,
+.icon.selected .icon-folder {
+    background-image: url('../assets/folder-boilsheet.png');
+}
+
+.icon-bin {
+    background-image: url('../assets/bin-icon.png');
+}
+
+.icon:hover .icon-bin,
+.icon.selected .icon-bin {
+    background-image: url('../assets/bin-icon.png');
+}
+
+.trashed-file {
+    opacity: 0.4;
+    filter: grayscale(1) blur(1px);
+    pointer-events: none;
+}
+
+.window-icon-grid .icon.trashed-file {
+    pointer-events: auto;
+    cursor: default;
+}
+
+.trashed-file .sprite {
+    animation: boil-animation 0.8s steps(3) infinite !important;
+    background-size: calc(var(--size) * 3) var(--size) !important;
+}
+
+.trashed-file .icon-txt {
+    background-image: url('../assets/txt-boilsheet.png') !important;
+}
+
+.trashed-file .icon-file {
+    background-image: url('../assets/file-boilsheet.png') !important;
+}

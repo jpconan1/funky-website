@@ -171,4 +171,93 @@ export class WindowManager {
         this.isDragging = false;
         this.isResizing = false;
     }
+
+    alert(message, title = 'System Alert') {
+        const content = document.createElement('div');
+        content.className = 'alert-container';
+        content.innerHTML = `
+            <div class="alert-message">${message}</div>
+            <div class="alert-actions">
+                <button class="alert-ok-btn">OK</button>
+            </div>
+        `;
+
+        const win = this.createWindow(title, content);
+
+        // Custom size for alerts
+        win.element.style.width = '320px';
+        win.element.style.height = 'auto';
+        win.element.style.minHeight = '140px';
+
+        // Center the alert
+        const x = (window.innerWidth - 320) / 2;
+        const y = (window.innerHeight - 200) / 2;
+        win.element.style.left = `${x}px`;
+        win.element.style.top = `${y}px`;
+
+        // Hide resize handle for alerts
+        const resizeHandle = win.element.querySelector('.window-resize-handle');
+        if (resizeHandle) resizeHandle.style.display = 'none';
+
+        const okBtn = content.querySelector('.alert-ok-btn');
+        okBtn.focus();
+
+        return new Promise((resolve) => {
+            okBtn.addEventListener('click', () => {
+                this.closeWindow(win);
+                resolve(true);
+            });
+        });
+    }
+
+    confirm(message, options = {}) {
+        const {
+            title = 'Confirm',
+            confirmText = 'OK',
+            cancelText = 'Cancel'
+        } = options;
+
+        const content = document.createElement('div');
+        content.className = 'alert-container';
+        content.innerHTML = `
+            <div class="alert-message">${message}</div>
+            <div class="alert-actions">
+                <button class="alert-cancel-btn">${cancelText}</button>
+                <button class="alert-confirm-btn">${confirmText}</button>
+            </div>
+        `;
+
+        const win = this.createWindow(title, content);
+
+        // Custom size for alerts
+        win.element.style.width = '320px';
+        win.element.style.height = 'auto';
+        win.element.style.minHeight = '140px';
+
+        // Center the alert
+        const x = (window.innerWidth - 320) / 2;
+        const y = (window.innerHeight - 200) / 2;
+        win.element.style.left = `${x}px`;
+        win.element.style.top = `${y}px`;
+
+        // Hide resize handle for alerts
+        const resizeHandle = win.element.querySelector('.window-resize-handle');
+        if (resizeHandle) resizeHandle.style.display = 'none';
+
+        const confirmBtn = content.querySelector('.alert-confirm-btn');
+        const cancelBtn = content.querySelector('.alert-cancel-btn');
+
+        confirmBtn.focus();
+
+        return new Promise((resolve) => {
+            confirmBtn.addEventListener('click', () => {
+                this.closeWindow(win);
+                resolve(true);
+            });
+            cancelBtn.addEventListener('click', () => {
+                this.closeWindow(win);
+                resolve(false);
+            });
+        });
+    }
 }

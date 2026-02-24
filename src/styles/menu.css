@@ -1,0 +1,310 @@
+#start-menu {
+    position: absolute;
+    bottom: 45px;
+    left: 0;
+    display: none;
+    z-index: var(--z-start-menu);
+    filter: drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.6));
+
+    border-style: solid;
+    border-width: 48px;
+    border-image-source: url('../assets/start-menu/start-box.png');
+    border-image-slice: 120 fill;
+    border-image-repeat: stretch;
+
+    width: 550px;
+    image-rendering: pixelated;
+    pointer-events: auto;
+}
+
+#start-menu.visible {
+    display: block;
+    animation: menu-slide-up 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.start-menu-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    padding: 10px;
+    font-family: var(--desktop-font);
+    color: var(--bios-text);
+}
+
+.start-menu-welcome {
+    font-size: 5.5rem;
+    font-weight: 900;
+    text-align: center;
+    margin: 0;
+    letter-spacing: -4px;
+    line-height: 0.9;
+    color: var(--bios-text);
+    margin-bottom: 10px;
+}
+
+.start-menu-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 25px;
+    border-top: 1px dashed rgba(238, 241, 219, 0.3);
+    padding-top: 25px;
+}
+
+.start-menu-left {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.start-menu-intro {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.start-menu-info,
+.start-menu-action {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.start-menu-action {
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.start-menu-right {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-left: 1px solid rgba(238, 241, 219, 0.2);
+    padding-left: 15px;
+}
+
+.start-menu-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.start-menu-item:hover {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+    border: 1px dashed var(--bios-bg);
+}
+
+.submenu {
+    position: absolute;
+    top: -48px;
+    left: 100%;
+    width: 480px;
+    display: none;
+    z-index: var(--z-submenu);
+    margin-left: 20px;
+    filter: drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.6));
+
+    border-style: solid;
+    border-width: 48px;
+    border-image-source: url('../assets/start-menu/submenu-box.png');
+    border-image-slice: 120 fill;
+    border-image-repeat: stretch;
+
+    image-rendering: pixelated;
+    pointer-events: auto;
+    color: var(--bios-text);
+}
+
+.submenu::before {
+    content: '';
+    position: absolute;
+    top: -48px;
+    bottom: -48px;
+    left: -78px;
+    width: 78px;
+    z-index: -1;
+}
+
+.start-menu-item.has-submenu:hover .submenu {
+    display: block;
+    animation: submenu-slide-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+
+.submenu-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: -10px;
+    padding: 5px;
+    font-family: var(--desktop-font);
+    text-transform: none;
+    letter-spacing: normal;
+    text-align: left;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--bios-text) transparent;
+}
+
+.submenu-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.submenu-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.submenu-content::-webkit-scrollbar-thumb {
+    background: var(--bios-text);
+    border-radius: 2px;
+}
+
+.submenu-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.submenu-header {
+    font-size: 1.8rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 0;
+    margin-bottom: 8px;
+    color: var(--bios-text);
+    border-bottom: 1px dashed rgba(238, 241, 219, 0.3);
+    padding-bottom: 12px;
+}
+
+.submenu-portrait {
+    width: 100%;
+    height: auto;
+    border: 4px solid var(--bios-bg);
+    margin-top: 10px;
+    filter: grayscale(100%) contrast(1.1);
+}
+
+.client-section {
+    border-bottom: 1px dashed rgba(238, 241, 219, 0.2);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.client-section:last-child {
+    border-bottom: none;
+}
+
+.client-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    color: var(--bios-text);
+    letter-spacing: -0.5px;
+}
+
+.client-subtitle {
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-style: italic;
+    margin: 0 0 15px 0;
+    opacity: 0.8;
+    color: var(--bios-text);
+}
+
+.client-copy {
+    margin-bottom: 12px !important;
+    font-size: 0.9rem !important;
+}
+
+.instagram-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.instagram-media {
+    margin: 0 !important;
+    border-radius: 4px !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+@keyframes submenu-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.menu-arrow {
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.start-menu-item:hover .menu-arrow {
+    opacity: 1;
+}
+
+@keyframes menu-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+#context-menu {
+    min-width: 180px;
+    background: rgba(1, 48, 30, 0.9);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    padding: 5px 0;
+    border-radius: 4px;
+    box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.5);
+    z-index: var(--z-context-menu);
+    font-family: var(--desktop-font);
+}
+
+.context-menu-item {
+    padding: 8px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--bios-text);
+    transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+}
+
+.menu-icon {
+    font-size: 1rem;
+}
