@@ -34,19 +34,25 @@ export async function saveMessage(fileName, content) {
 
 export async function binMessage(messageId) {
     if (!supabase) return;
+    console.log(`Binning message: ${messageId}`);
 
     const { data, error } = await supabase.rpc('bin_message', { message_id: messageId });
 
     if (error) {
-        // Fallback if the RPC doesn't exist yet
+        console.warn('RPC failed, trying direct update:', error);
         const { data: updateData, error: updateError } = await supabase
             .from('messages')
             .update({ is_binned: true, bin_count: 1 }) // Simple fallback
-            .eq('id', messageId);
+            .eq('id', messageId)
+            .select();
 
-        if (updateError) throw updateError;
+        if (updateError) {
+            console.error('Direct binning failed:', updateError);
+            throw updateError;
+        }
         return updateData;
     }
+    console.log('Binned via RPC');
     return data;
 }
 
@@ -72,10 +78,13 @@ export async function getMessages() {
     const { data, error } = await supabase
         .from('messages')
         .select('*')
-        .eq('is_binned', false)
+        .or('is_binned.eq.false,is_binned.is.null')
         .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+        console.error('Error fetching guestbook messages:', error);
+        return [];
+    }
     return data;
 }
 
@@ -88,6 +97,9 @@ export async function getBinnedMessages() {
         .eq('is_binned', true)
         .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+        console.error('Error fetching binned messages:', error);
+        return [];
+    }
     return data;
 }
