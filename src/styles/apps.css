@@ -297,3 +297,276 @@
     background-color: rgba(0, 200, 255, 0.1) !important;
     border: 1px dashed rgba(0, 200, 255, 0.5) !important;
 }
+
+/* Pixel Art App */
+.pixel-art-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 10px;
+}
+
+.editor-toolbar-top,
+.editor-toolbar-bottom {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+.editor-toolbar-bottom {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(238, 241, 219, 0.1);
+}
+
+.canvas-size-inputs {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: var(--bios-text);
+}
+
+.size-input {
+    width: 50px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 2px 4px;
+    font-family: var(--bios-font);
+    border-radius: 2px;
+}
+
+.tiny-btn {
+    background: rgba(238, 241, 219, 0.1);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.tiny-btn:hover {
+    background: rgba(238, 241, 219, 0.2);
+}
+
+.pixel-art-main {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 4px;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.pixel-art-toolbox {
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(238, 241, 219, 0.05);
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(238, 241, 219, 0.1);
+}
+
+.tool-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+}
+
+.tool-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.tool-btn:hover {
+    background: rgba(238, 241, 219, 0.2);
+}
+
+.tool-btn.active {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+    border-color: var(--bios-text);
+}
+
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.color-preview {
+    height: 40px;
+    border: 1px solid rgba(238, 241, 219, 0.5);
+    border-radius: 4px;
+}
+
+.rgb-sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.slider-row label {
+    font-family: var(--bios-font);
+    font-size: 0.7rem;
+    width: 10px;
+}
+
+.rgb-slider {
+    width: 85%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(238, 241, 219, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.rgb-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    background: var(--bios-text);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.hex-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    font-family: var(--bios-font);
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 2px;
+    width: 100%;
+    text-align: center;
+}
+
+.brush-settings-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(238, 241, 219, 0.1);
+}
+
+.brush-setting-label {
+    font-size: 0.7rem;
+    color: var(--bios-text);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+}
+
+.brush-shape-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+}
+
+.shape-btn {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    color: var(--bios-text);
+    padding: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.shape-btn:hover {
+    background: rgba(238, 241, 219, 0.2);
+}
+
+.shape-btn.active {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+}
+
+.stroke-size-value {
+    font-size: 0.7rem;
+    margin-left: auto;
+}
+
+.pixel-art-canvas-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+#pixel-canvas {
+    background: #111;
+    background-image:
+        linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+        linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    cursor: crosshair;
+    image-rendering: pixelated;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.pixel-art-viewer-body {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #111;
+    border-radius: 4px;
+    overflow: auto;
+}
+
+.pixel-art-canvas-view {
+    image-rendering: pixelated;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+/* YouTube App */
+.youtube-container {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+}
+
+.youtube-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}

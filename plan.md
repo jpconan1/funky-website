@@ -9,7 +9,7 @@ Building out the core application suite for JP-OS, moving from simple text displ
     1. Identify file extension or `isCloud` status.
     2. Lookup associated App class/handler.
     3. Initialize App within a new Window Manager window.
-- **Persistence**: All apps will interface with `supabase.js` to save/load data from the `messages` table.
+- **Persistence**: All apps will interface with `supabase.js` to save/load data from the `messages` table. Note: once a file is saved in JP-OS, it cannot be edited (the "Ink on Paper" rule). Systems for creating new files from existing ones will be implemented later.
 
 ## 2. App Roadmap
 

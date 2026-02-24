@@ -2,6 +2,7 @@ import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
+import { PixelArt } from './pixel-art.js';
 import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage } from './supabase.js';
 import { Sailor } from './sailor.js';
 
@@ -60,6 +61,8 @@ export async function initDesktop() {
         new URL('./assets/start-menu/start-selected.png', import.meta.url).href,
         new URL('./assets/bin-icon.png', import.meta.url).href,
         new URL('./assets/start-menu/portrait.jpg', import.meta.url).href,
+        new URL('./assets/burger-joint.png', import.meta.url).href,
+        new URL('./assets/working-draft-icon.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -68,6 +71,7 @@ export async function initDesktop() {
 
     const wm = new WindowManager();
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
+    const pixelArt = new PixelArt(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
 
     document.title = "Retro Desktop";
@@ -156,7 +160,10 @@ export async function initDesktop() {
     const bgVideo = document.querySelector('.desktop-bg-video');
     const desktop = document.querySelector('#desktop');
 
-    initContextMenu(desktop, () => textEditor.openNewFile());
+    initContextMenu(desktop, {
+        newTextFile: () => textEditor.openNewFile(),
+        newPixelArt: () => pixelArt.openNewFile()
+    });
 
     // Fade in background video immediately since it's preloaded
     if (bgVideo) bgVideo.style.opacity = '0.6';
@@ -413,6 +420,7 @@ export async function initDesktop() {
 
 
     function createIcon(file, initialX, initialY) {
+        console.log(`[DEBUG] Creating Icon: "${file.name}" | Ext: "${file.extension}" | isCloud: ${!!file.isCloud}`);
         const icon = document.createElement('div');
         icon.className = 'icon';
         icon.innerHTML = `
@@ -468,21 +476,60 @@ export async function initDesktop() {
     }
 
     async function openFile(file) {
+        if (file.type === 'url') {
+            window.open(file.url, '_blank');
+            return;
+        }
+
+        if (file.type === 'video') {
+            const content = `
+                <div class="youtube-container">
+                    <iframe class="youtube-iframe" src="https://www.youtube.com/embed/${file.videoId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            `;
+            const win = wm.createWindow(file.name, content);
+            win.element.style.width = '640px';
+            win.element.style.height = '400px';
+            win.element.querySelector('.window-content').style.padding = '0';
+            return;
+        }
+
         if (!file.path && !file.isCloud && file.type !== 'directory') {
             console.warn('File has no path and is not cloud/dir:', file);
             return;
         }
 
-        console.log(`Opening ${file.name} (Type: ${file.type}, Ext: ${file.extension})`);
         const ext = (file.extension || '').toLowerCase();
+        console.log(`[DEBUG] Opening File: "${file.name}" | Ext: "${ext}" | isCloud: ${file.isCloud}`);
 
         // 1. Directory handling (Sailor)
         if (file.type === 'directory' || (file.contents && Array.isArray(file.contents))) {
+            console.log(`[DEBUG] -> Branch: Directory (Sailor)`);
             return sailor.openDirectory(file);
         }
 
-        // 2. Text / Cloud File handling (TextEditor)
-        if (ext === '.txt' || file.isCloud || file.type === 'cloud_file') {
+        // 2. Pixel Art handling
+        if (ext === '.draw') {
+            console.log(`[DEBUG] -> Branch: Pixel Art`);
+            return pixelArt.open(file);
+        }
+
+        // 3. Image handling (Internal Viewer)
+        if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
+            console.log(`[DEBUG] -> Branch: Image Viewer`);
+            const encodedPath = encodePath(file.path);
+            const content = `
+                <div class="img-content">
+                    <img src="./desktop/${encodedPath}" alt="${file.name}" />
+                </div>
+            `;
+            wm.createWindow(file.name, content);
+            return;
+        }
+
+        // 4. Text / Cloud File fallback (TextEditor)
+        if (ext === '.txt' || file.isCloud) {
+            console.log(`[DEBUG] -> Branch: Text Editor`);
             // If it's a local text file, we might need to fetch the content first
             if (ext === '.txt' && !file.isCloud && !file.content) {
                 try {
@@ -498,28 +545,12 @@ export async function initDesktop() {
             return textEditor.open(file);
         }
 
-        // 3. Image handling (Internal Viewer)
-        if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-            const encodedPath = encodePath(file.path);
-            const content = `
-                <div class="img-content">
-                    <img src="./desktop/${encodedPath}" alt="${file.name}" />
-                </div>
-            `;
-            wm.createWindow(file.name, content);
-            return;
-        }
-
-        // 4. Future App Registry placeholders
-        if (ext === '.draw') {
-            // return paintApp.open(file);
-        }
-
         if (ext === '.loop') {
             // return synthApp.open(file);
         }
 
         // 5. Generic Fallback
+        console.log(`[DEBUG] -> Branch: Generic Fallback`);
         const content = `
             <div style="padding: 20px;">
                 <p>This is the content of <strong>${file.name}</strong>.</p>
@@ -670,6 +701,51 @@ export async function initDesktop() {
 
             // Add The Bin to the desktop
             createBinIcon();
+
+            // Add Burger Joint icon
+            const burgerFile = {
+                name: 'Burger Joint',
+                type: 'url',
+                url: 'http://burger-joint-chi.vercel.app'
+            };
+            const burgerPos = getGridPosition(iconPairs.length); // Place after binned icons and other files
+            iconGrid.appendChild(createIcon(burgerFile, burgerPos.x, burgerPos.y));
+
+            // Add Working Draft icon
+            const draftFile = {
+                name: 'Yellow Deli article',
+                type: 'url',
+                url: 'https://workingdraftmagazine.com/the-people-of-the-yellow-deli/'
+            };
+            const draftPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(draftFile, draftPos.x, draftPos.y));
+
+            // Add Classmate Profile icon
+            const ytFile = {
+                name: 'Classmate Profile',
+                type: 'video',
+                videoId: 'tTOXMh1kq68'
+            };
+            const ytPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(ytFile, ytPos.x, ytPos.y));
+
+            // Add Meatballs icon
+            const meatballsFile = {
+                name: 'Meatballs',
+                type: 'video',
+                videoId: '_5UjgyFE7Rw'
+            };
+            const meatballsPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(meatballsFile, meatballsPos.x, meatballsPos.y));
+
+            // Add Train Robbery icon
+            const trainFile = {
+                name: 'Train Robbery',
+                type: 'video',
+                videoId: 'lxh54-1y60A'
+            };
+            const trainPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(trainFile, trainPos.x, trainPos.y));
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
@@ -678,6 +754,7 @@ export async function initDesktop() {
     const loadGuestbookMessages = async (isRefresh = false) => {
         try {
             const messages = await getMessages();
+            console.log(`[DEBUG] Loaded ${messages.length} messages from Cloud`);
 
             // If refreshing, we only want to add NEW messages
             // For now, let's keep it simple: if refresh, clear all cloud icons and reload
@@ -695,10 +772,22 @@ export async function initDesktop() {
             }
 
             messages.forEach((msg) => {
+                const filename = (msg.filename || 'message.txt').trim();
+                let msgExt = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '.txt';
+
+                // Content-based fallback: if it looks like a DataURL image, it's likely a .draw file
+                if (msg.content && msg.content.startsWith('data:image/')) {
+                    if (msgExt !== '.draw' && msgExt !== '.png' && msgExt !== '.jpg' && msgExt !== '.jpeg') {
+                        msgExt = '.draw';
+                    }
+                }
+
+                console.log(`[DEBUG] Cloud File: "${filename}" | Detected Ext: "${msgExt}"`);
+
                 const file = {
-                    id: msg.id, // Store ID for deduplication later if needed
-                    name: msg.filename || 'message.txt',
-                    extension: '.txt',
+                    id: msg.id,
+                    name: filename,
+                    extension: msgExt,
                     type: 'cloud_file',
                     content: msg.content,
                     isCloud: true
@@ -760,10 +849,19 @@ export function getSpriteHTML(className, frames = 3) {
 }
 
 export function getIconSymbol(file) {
+    if (file.name === 'Burger Joint') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/burger-joint.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
+    if (file.name === 'Yellow Deli article') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/working-draft-icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
+    if (file.type === 'video') {
+        return `<div class="sprite" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI0IiB5PSIxMiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0ZGMDAwMCIgLz48cGF0aCBkPSJNMjYgMjJMIDQyIDMyTDI2IDQyVjIyWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+'); --frames: 1;"></div>`;
+    }
     const ext = (file.extension || '').toLowerCase();
     if (file.type === 'directory' || file.contents) return getSpriteHTML('icon-folder');
     if (ext === '.pdf') return getSpriteHTML('icon-pdf');
-    if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') return getSpriteHTML('icon-img');
+    if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.draw') return getSpriteHTML('icon-img');
     if (ext === '.txt') return getSpriteHTML('icon-txt');
     return getSpriteHTML('icon-file');
 }

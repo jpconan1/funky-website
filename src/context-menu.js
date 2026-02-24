@@ -1,4 +1,4 @@
-export function initContextMenu(desktopElement, onNewFile) {
+export function initContextMenu(desktopElement, actions) {
     const menu = document.createElement('div');
     menu.id = 'context-menu';
     menu.className = 'glassmorphism';
@@ -9,6 +9,10 @@ export function initContextMenu(desktopElement, onNewFile) {
         <div class="context-menu-item" id="menu-new-file">
             <span class="menu-icon">📄</span>
             <span>New text file...</span>
+        </div>
+        <div class="context-menu-item" id="menu-new-pixel-art">
+            <span class="menu-icon">🎨</span>
+            <span>New pixel art...</span>
         </div>
     `;
 
@@ -43,6 +47,12 @@ export function initContextMenu(desktopElement, onNewFile) {
     menu.querySelector('#menu-new-file').addEventListener('click', (e) => {
         e.stopPropagation();
         menu.style.display = 'none';
-        if (onNewFile) onNewFile();
+        if (actions.newTextFile) actions.newTextFile();
+    });
+
+    menu.querySelector('#menu-new-pixel-art').addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.style.display = 'none';
+        if (actions.newPixelArt) actions.newPixelArt();
     });
 }
