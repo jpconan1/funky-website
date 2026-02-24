@@ -32,6 +32,36 @@ export async function saveMessage(fileName, content) {
     return data;
 }
 
+export async function binMessage(messageId) {
+    if (!supabase) return;
+
+    const { data, error } = await supabase.rpc('bin_message', { message_id: messageId });
+
+    if (error) {
+        // Fallback if the RPC doesn't exist yet
+        const { data: updateData, error: updateError } = await supabase
+            .from('messages')
+            .update({ is_binned: true, bin_count: 1 }) // Simple fallback
+            .eq('id', messageId);
+
+        if (updateError) throw updateError;
+        return updateData;
+    }
+    return data;
+}
+
+export async function deleteMessagePermanently(messageId) {
+    if (!supabase) return;
+
+    const { data, error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+    if (error) throw error;
+    return data;
+}
+
 export async function getMessages() {
     if (!supabase) {
         // Return empty array if not configured, rather than crashing
@@ -42,6 +72,20 @@ export async function getMessages() {
     const { data, error } = await supabase
         .from('messages')
         .select('*')
+        .eq('is_binned', false)
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+}
+
+export async function getBinnedMessages() {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('is_binned', true)
         .order('created_at', { ascending: false });
 
     if (error) throw error;

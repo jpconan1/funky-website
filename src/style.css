@@ -305,6 +305,44 @@ body {
   background-image: url('./assets/folder-boilsheet.png');
 }
 
+.icon-bin {
+  background-image: url('./assets/bin-icon.png');
+}
+
+.icon:hover .icon-bin,
+.icon.selected .icon-bin {
+  background-image: url('./assets/bin-icon.png');
+  /* The bin doesn't have a boilsheet yet, so we just use the same image */
+}
+
+/* Trashed Files Style */
+.trashed-file {
+  opacity: 0.4;
+  filter: grayscale(1) blur(1px);
+  pointer-events: none;
+  /* Can't interact with them normally */
+}
+
+.window-icon-grid .icon.trashed-file {
+  pointer-events: auto;
+  /* Allow selecting in the bin window */
+  cursor: default;
+}
+
+.trashed-file .sprite {
+  animation: boil-animation 0.8s steps(3) infinite !important;
+  /* wobbly/slow boil */
+  background-size: calc(var(--size) * 3) var(--size) !important;
+}
+
+.trashed-file .icon-txt {
+  background-image: url('./assets/txt-boilsheet.png') !important;
+}
+
+.trashed-file .icon-file {
+  background-image: url('./assets/file-boilsheet.png') !important;
+}
+
 #taskbar {
   position: fixed;
   bottom: 0;

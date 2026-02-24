@@ -2,7 +2,7 @@ import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
-import { getMessages } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently } from './supabase.js';
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -14,6 +14,14 @@ async function preloadAssets(paths) {
                 video.oncanplaythrough = resolve;
                 video.onerror = resolve;
                 setTimeout(resolve, 3000); // 3s timeout fallback
+            });
+        } else if (path.endsWith('.wav')) {
+            return new Promise((resolve) => {
+                const audio = new Audio();
+                audio.src = path;
+                audio.oncanplaythrough = resolve;
+                audio.onerror = resolve;
+                setTimeout(resolve, 2000); // 2s timeout fallback
             });
         } else {
             return new Promise((resolve) => {
@@ -49,7 +57,9 @@ export async function initDesktop() {
         new URL('./assets/start-menu/start-hovered.png', import.meta.url).href,
         new URL('./assets/start-menu/start-idle.png', import.meta.url).href,
         new URL('./assets/start-menu/start-selected.png', import.meta.url).href,
-        new URL('./assets/start-menu/portrait.jpg', import.meta.url).href
+        new URL('./assets/bin-icon.png', import.meta.url).href,
+        new URL('./assets/start-menu/portrait.jpg', import.meta.url).href,
+        '/chime.wav'
     ];
 
     // Start preloading immediately
@@ -225,8 +235,14 @@ export async function initDesktop() {
     const runner = Runner.create();
     Runner.run(runner, engine);
 
+    const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+
     const iconPairs = [];
     const walls = [];
+
+    // "The Bin" Physics Body & State
+    let binBody = null;
+    let isBinning = false;
 
     function updateWalls() {
         const width = iconGrid.clientWidth;
@@ -277,7 +293,7 @@ export async function initDesktop() {
         const height = iconGrid.clientHeight;
         const margin = 200;
 
-        iconPairs.forEach(({ element, body }) => {
+        iconPairs.forEach(({ element, body, file }) => {
             const { x, y } = body.position;
 
             // OOB check - respawn if somehow escaped the thick walls
@@ -289,12 +305,68 @@ export async function initDesktop() {
                 Matter.Body.setVelocity(body, { x: 0, y: 0 });
             }
 
+            // Suction Effect logic
+            if (binBody && file && file.isCloud && !body.isStatic && !element.classList.contains('dragging')) {
+                const dx = binBody.position.x - x;
+                const dy = binBody.position.y - y;
+                const distSq = dx * dx + dy * dy;
+                const suctionRadiusSq = 150 * 150;
+
+                if (distSq < suctionRadiusSq) {
+                    const dist = Math.sqrt(distSq);
+                    const forceMagnitude = (1 - dist / 150) * 0.005;
+                    Matter.Body.applyForce(body, body.position, {
+                        x: (dx / dist) * forceMagnitude,
+                        y: (dy / dist) * forceMagnitude
+                    });
+
+                    // Overlap Detection -> Binning Sequence
+                    if (dist < 40 && !element.dataset.binning) {
+                        element.dataset.binning = "true";
+                        startBinningSequence(element, body, file);
+                    }
+                }
+            }
+
             // Subtract half width/height to center the element on the body
             element.style.left = `${x - 50}px`;
             element.style.top = `${y - 60}px`; // Icons are roughly 100x120
-            element.style.transform = `rotate(${body.angle}rad)`;
+            element.style.transform = `rotate(${body.angle}rad) scale(${element.dataset.scale || 1})`;
         });
     });
+
+    async function startBinningSequence(element, body, file) {
+        // 1. Visual Feedack: Shrink animation
+        let scale = 1;
+        const shrinkInterval = setInterval(() => {
+            scale -= 0.1;
+            element.dataset.scale = scale;
+            if (scale <= 0) {
+                clearInterval(shrinkInterval);
+                finishBinning(element, body, file);
+            }
+        }, 30);
+
+        // 2. The Clink - Visual Feedback via CSS or Flash
+        element.style.transition = "filter 0.2s";
+        element.style.filter = "brightness(2) contrast(2)";
+    }
+
+    async function finishBinning(element, body, file) {
+        // Remove from physics and DOM
+        Composite.remove(engine.world, body);
+        element.remove();
+        const index = iconPairs.findIndex(p => p.element === element);
+        if (index > -1) iconPairs.splice(index, 1);
+
+        // Update Supabase
+        try {
+            await binMessage(file.id);
+            console.log(`Binned: ${file.name}`);
+        } catch (err) {
+            console.error("Failed to bin file:", err);
+        }
+    }
 
     window.addEventListener('resize', updateWalls);
     setTimeout(updateWalls, 0); // Initial walls setup
@@ -351,7 +423,7 @@ export async function initDesktop() {
         body.element = icon; // Store reference for events
 
         Composite.add(engine.world, body);
-        iconPairs.push({ element: icon, body });
+        iconPairs.push({ element: icon, body, file });
 
         icon.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -418,6 +490,79 @@ export async function initDesktop() {
         return icon;
     }
 
+    function createBinIcon(initialX, initialY) {
+        const bin = document.createElement('div');
+        bin.className = 'icon';
+        bin.innerHTML = `
+            <div class="icon-image"><div class="sprite icon-bin" style="--frames: 1"></div></div>
+            <div class="icon-label">The Bin</div>
+        `;
+
+        const width = 100;
+        const height = 120;
+        const x = initialX !== undefined ? initialX : (iconGrid.clientWidth - 80);
+        const y = initialY !== undefined ? initialY : (iconGrid.clientHeight - 100);
+
+        binBody = Bodies.rectangle(x, y, width, height, {
+            isStatic: true,
+            isSensor: true, // Don't collide physically, just detect overlap
+            render: { visible: false }
+        });
+        binBody.element = bin;
+
+        Composite.add(engine.world, binBody);
+        iconPairs.push({ element: bin, body: binBody });
+
+        bin.addEventListener('dblclick', async (e) => {
+            e.stopPropagation();
+            openBinWindow();
+        });
+
+        iconGrid.appendChild(bin);
+        return bin;
+    }
+
+    async function openBinWindow() {
+        const binnedFiles = await getBinnedMessages();
+        const grid = document.createElement('div');
+        grid.className = 'window-icon-grid';
+
+        if (binnedFiles.length === 0) {
+            grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">The Bin is empty.</p>';
+        } else {
+            binnedFiles.forEach(msg => {
+                const subIcon = document.createElement('div');
+                subIcon.className = 'icon trashed-file';
+                subIcon.innerHTML = `
+                    <div class="icon-image">${getIconSymbol({ extension: '.txt' })}</div>
+                    <div class="icon-label">${formatFileName(msg.filename)}</div>
+                    ${isAdmin ? '<div class="admin-delete" style="color: red; font-size: 10px; cursor: pointer;">DELETE PERMANENTLY</div>' : ''}
+                `;
+
+                if (isAdmin) {
+                    const deleteBtn = subIcon.querySelector('.admin-delete');
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`True Delete ${msg.filename}?`)) {
+                            await deleteMessagePermanently(msg.id);
+                            subIcon.remove();
+                            if (grid.children.length === 0) grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">The Bin is empty.</p>';
+                        }
+                    });
+                }
+
+                subIcon.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    alert("You can't open files in the bin! They are trashed.");
+                });
+
+                grid.appendChild(subIcon);
+            });
+        }
+
+        wm.createWindow("The Bin", grid);
+    }
+
     function getGridPosition(index) {
         const colWidth = 110;
         const rowHeight = 130;
@@ -444,6 +589,9 @@ export async function initDesktop() {
                 const pos = getGridPosition(index);
                 iconGrid.appendChild(createIcon(file, pos.x, pos.y));
             });
+
+            // Add The Bin to the desktop
+            createBinIcon();
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
@@ -498,6 +646,10 @@ export async function initDesktop() {
     await loadIcons; // Ensure icons are fetched before showing grid
     await loadGuestbookMessages(); // Fetch cloud messages
     iconGrid.style.visibility = 'visible';
+
+    // Play startup chime
+    const chime = new Audio('/chime.wav');
+    chime.play().catch(e => console.log('Startup chime blocked:', e));
 
     // Simple clock
     function updateClock() {
