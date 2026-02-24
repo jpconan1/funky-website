@@ -36,13 +36,13 @@ export async function binMessage(messageId) {
     if (!supabase) return;
     console.log(`Binning message: ${messageId}`);
 
-    const { data, error } = await supabase.rpc('bin_message', { message_id: messageId });
+    const { data: updated, error } = await supabase.rpc('bin_message', { message_id: messageId });
 
     if (error) {
-        console.warn('RPC failed, trying direct update:', error);
+        console.warn('RPC failed:', error);
         const { data: updateData, error: updateError } = await supabase
             .from('messages')
-            .update({ is_binned: true, bin_count: 1 }) // Simple fallback
+            .update({ is_binned: true, bin_count: 1 })
             .eq('id', messageId)
             .select();
 
@@ -52,8 +52,13 @@ export async function binMessage(messageId) {
         }
         return updateData;
     }
-    console.log('Binned via RPC');
-    return data;
+
+    if (updated === false) {
+        console.error(`Database found NO record for ID ${messageId}! Binning failed.`);
+    } else {
+        console.log('Successfully binned in DB');
+    }
+    return updated;
 }
 
 export async function deleteMessagePermanently(messageId) {
