@@ -1,5 +1,31 @@
 [
   {
+    "name": "Hall of fame",
+    "size": 128,
+    "modified": "2026-02-24T22:36:48.545Z",
+    "extension": "",
+    "type": "directory",
+    "path": "Hall of fame",
+    "contents": [
+      {
+        "name": "a lovely hike.png",
+        "size": 57478,
+        "modified": "2026-02-24T22:31:23.046Z",
+        "extension": ".png",
+        "type": "image",
+        "path": "Hall of fame/a lovely hike.png"
+      },
+      {
+        "name": "hall-of-fame.txt",
+        "size": 89,
+        "modified": "2026-02-24T22:36:33.177Z",
+        "extension": ".txt",
+        "type": "text",
+        "path": "Hall of fame/hall-of-fame.txt"
+      }
+    ]
+  },
+  {
     "name": "blog.txt",
     "size": 201,
     "modified": "2026-02-24T18:17:52.788Z",

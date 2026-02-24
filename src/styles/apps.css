@@ -86,6 +86,23 @@
     color: var(--bios-text);
 }
 
+.editor-export-btn {
+    background: rgba(238, 241, 219, 0.1);
+    color: var(--bios-text);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    padding: 5px 15px;
+    font-family: var(--desktop-font);
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+}
+
+.editor-export-btn:hover {
+    background: rgba(238, 241, 219, 0.2);
+    border-color: var(--bios-text);
+}
+
 .editor-content-area {
     flex: 1;
     background: rgba(0, 0, 0, 0.2);

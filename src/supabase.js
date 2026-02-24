@@ -16,8 +16,17 @@ export async function saveMessage(fileName, content) {
         throw new Error('Supabase is not initialized. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file and restart your dev server.');
     }
 
-    const sanitizedContent = DOMPurify.sanitize(content);
+    const isImage = content.startsWith('data:image/');
+
+    // We only sanitize if it's NOT an image. 
+    // DOMPurify on a 1MB base64 string is extremely slow and can corrupt the image data.
+    const sanitizedContent = isImage ? content : DOMPurify.sanitize(content);
     const sanitizedFileName = DOMPurify.sanitize(fileName);
+
+    // Basic Validation: If it's a .draw file, it MUST be an image
+    if (sanitizedFileName.toLowerCase().endsWith('.draw') && !isImage) {
+        throw new Error('Security: .draw files must be valid image data.');
+    }
 
     const { data, error } = await supabase
         .from('messages')

@@ -29,7 +29,10 @@ export class PixelArt {
         content.innerHTML = `
             <div class="editor-toolbar" style="justify-content: space-between;">
                 <div class="editor-filename-display" style="font-family: var(--bios-font); color: var(--bios-text);">${file.name}</div>
-                <div class="editor-status" style="opacity: 0.5;">Read Only</div>
+                <div class="editor-toolbar-actions">
+                    <button class="editor-export-btn" id="pixel-export-btn">Export PNG</button>
+                    <span class="editor-status" style="opacity: 0.5; margin-left: 10px;">Read Only</span>
+                </div>
             </div>
             <div class="pixel-art-viewer-body">
                 <canvas class="pixel-art-canvas-view"></canvas>
@@ -38,6 +41,7 @@ export class PixelArt {
 
         const canvas = content.querySelector('.pixel-art-canvas-view');
         const ctx = canvas.getContext('2d');
+        const exportBtn = content.querySelector('#pixel-export-btn');
 
         // Load data if available
         if (file.content) {
@@ -49,6 +53,13 @@ export class PixelArt {
             };
             img.src = file.content;
         }
+
+        exportBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = file.name.replace('.draw', '') + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
 
         return this.wm.createWindow(`Viewing: ${file.name}`, content);
     }
@@ -62,6 +73,7 @@ export class PixelArt {
                 <div class="editor-toolbar-top">
                     <input type="text" id="pixel-file-name" placeholder="artwork.draw" class="editor-filename-input" />
                     <button id="pixel-save-btn" class="editor-save-btn">Save to Cloud</button>
+                    <button id="pixel-local-export-btn" class="editor-export-btn" style="margin-left: 5px;">Export PNG</button>
                 </div>
                 <div class="editor-toolbar-bottom">
                     <div class="canvas-size-inputs">
@@ -152,6 +164,15 @@ export class PixelArt {
         const status = content.querySelector('#pixel-status');
         const privacyCheckbox = content.querySelector('#pixel-privacy-agreement');
         const viewPrivacyLink = content.querySelector('#view-pixel-privacy');
+        const localExportBtn = content.querySelector('#pixel-local-export-btn');
+
+        localExportBtn.addEventListener('click', () => {
+            const fileName = (fileNameInput.value.trim() || 'artwork.draw').replace('.draw', '') + '.png';
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
 
         viewPrivacyLink.addEventListener('click', (e) => {
             e.preventDefault();
