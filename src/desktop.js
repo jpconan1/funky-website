@@ -41,7 +41,7 @@ async function preloadAssets(paths) {
 }
 
 export async function initDesktop() {
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     const app = document.querySelector('#app');
     const beat = 150;
 
@@ -174,13 +174,23 @@ export async function initDesktop() {
     if (bgVideo) bgVideo.style.opacity = '0.6';
 
     // Start Menu Logic
-    startButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isVisible = startMenu.classList.toggle('visible');
-        startButton.classList.toggle('active');
+    let startBtnPressPos = { x: 0, y: 0 };
+    startButton.addEventListener('pointerdown', (e) => {
+        startBtnPressPos = { x: e.clientX, y: e.clientY };
+    });
 
-        if (isVisible && window.instgrm) {
-            window.instgrm.Embeds.process();
+    startButton.addEventListener('pointerup', (e) => {
+        const endPos = { x: e.clientX, y: e.clientY };
+        const dist = Math.sqrt((endPos.x - startBtnPressPos.x) ** 2 + (endPos.y - startBtnPressPos.y) ** 2);
+
+        if (dist < 10) {
+            e.stopPropagation();
+            const isVisible = startMenu.classList.toggle('visible');
+            startButton.classList.toggle('active');
+
+            if (isVisible && window.instgrm) {
+                window.instgrm.Embeds.process();
+            }
         }
     });
 
@@ -298,6 +308,7 @@ export async function initDesktop() {
 
     // Mouse constraints for dragging
     const mouse = Mouse.create(iconGrid);
+    mouse.pixelRatio = window.devicePixelRatio || 1;
     const mouseConstraint = MouseConstraint.create(engine, {
         mouse: mouse,
         constraint: {
@@ -412,7 +423,7 @@ export async function initDesktop() {
     setTimeout(updateWalls, 0); // Initial walls setup
 
     // Close menu and deselect icons when clicking elsewhere
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener('pointerdown', (e) => {
         if (!e.target.closest('.icon')) {
             document.querySelectorAll('.icon.selected').forEach(icon => icon.classList.remove('selected'));
         }
@@ -459,11 +470,24 @@ export async function initDesktop() {
         Composite.add(engine.world, body);
         iconPairs.push({ element: icon, body, file });
 
+        let startPos = { x: 0, y: 0 };
+        icon.addEventListener('pointerdown', (e) => {
+            startPos = { x: e.clientX, y: e.clientY };
+        });
+
+        icon.addEventListener('pointerup', (e) => {
+            const endPos = { x: e.clientX, y: e.clientY };
+            const dist = Math.sqrt((endPos.x - startPos.x) ** 2 + (endPos.y - startPos.y) ** 2);
+
+            if (isTouchDevice && dist < 10) {
+                e.stopPropagation();
+                openFile(file);
+            }
+        });
+
         icon.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (isTouchDevice) {
-                openFile(file);
-            } else {
+            if (!isTouchDevice) {
                 // Deselect others
                 document.querySelectorAll('.icon.selected').forEach(el => {
                     if (el !== icon) el.classList.remove('selected');
@@ -609,11 +633,24 @@ export async function initDesktop() {
         Composite.add(engine.world, binBody);
         iconPairs.push({ element: bin, body: binBody });
 
+        let startPos = { x: 0, y: 0 };
+        bin.addEventListener('pointerdown', (e) => {
+            startPos = { x: e.clientX, y: e.clientY };
+        });
+
+        bin.addEventListener('pointerup', (e) => {
+            const endPos = { x: e.clientX, y: e.clientY };
+            const dist = Math.sqrt((endPos.x - startPos.x) ** 2 + (endPos.y - startPos.y) ** 2);
+
+            if (isTouchDevice && dist < 10) {
+                e.stopPropagation();
+                openBinWindow();
+            }
+        });
+
         bin.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (isTouchDevice) {
-                openBinWindow();
-            } else {
+            if (!isTouchDevice) {
                 // Deselect others
                 document.querySelectorAll('.icon.selected').forEach(el => {
                     if (el !== bin) el.classList.remove('selected');
@@ -662,32 +699,50 @@ export async function initDesktop() {
                     });
                 }
 
+                let startPos = { x: 0, y: 0 };
+                subIcon.addEventListener('pointerdown', (e) => {
+                    startPos = { x: e.clientX, y: e.clientY };
+                });
+
+                subIcon.addEventListener('pointerup', async (e) => {
+                    const endPos = { x: e.clientX, y: e.clientY };
+                    const dist = Math.sqrt((endPos.x - startPos.x) ** 2 + (endPos.y - startPos.y) ** 2);
+
+                    if (dist < 10) {
+                        e.stopPropagation();
+
+                        const confirmed = await wm.confirm(`Are you sure you want to restore ${msg.filename}? Someone probably binned it for a reason.`, {
+                            title: 'Restore File',
+                            confirmText: 'Restore',
+                            cancelText: 'Nevermind'
+                        });
+
+                        if (!confirmed) return;
+
+                        try {
+                            subIcon.style.opacity = '0.5';
+                            subIcon.style.pointerEvents = 'none';
+                            await restoreMessage(msg.id);
+                            subIcon.remove();
+                            if (grid.children.length === 0) {
+                                grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">The Bin is empty.</p>';
+                            }
+                            // Refresh the desktop to show the restored file
+                            await loadGuestbookMessages(true);
+                        } catch (error) {
+                            console.error('Failed to restore message:', error);
+                            subIcon.style.opacity = '1';
+                            subIcon.style.pointerEvents = 'auto';
+                            wm.alert('Failed to restore: ' + error.message, 'Error');
+                        }
+                    }
+                });
+
                 subIcon.addEventListener('dblclick', async (e) => {
                     e.stopPropagation();
-
-                    const confirmed = await wm.confirm(`Are you sure you want to restore ${msg.filename}? Someone probably binned it for a reason.`, {
-                        title: 'Restore File',
-                        confirmText: 'Restore',
-                        cancelText: 'Nevermind'
-                    });
-
-                    if (!confirmed) return;
-
-                    try {
-                        subIcon.style.opacity = '0.5';
-                        subIcon.style.pointerEvents = 'none';
-                        await restoreMessage(msg.id);
-                        subIcon.remove();
-                        if (grid.children.length === 0) {
-                            grid.innerHTML = '<p style="padding: 20px; opacity: 0.5;">The Bin is empty.</p>';
-                        }
-                        // Refresh the desktop to show the restored file
-                        await loadGuestbookMessages(true);
-                    } catch (error) {
-                        console.error('Failed to restore message:', error);
-                        subIcon.style.opacity = '1';
-                        subIcon.style.pointerEvents = 'auto';
-                        wm.alert('Failed to restore: ' + error.message, 'Error');
+                    if (!isTouchDevice) {
+                        // Desktop dblclick logic already covered if needed, 
+                        // but subIcon.pointerup handles tap on mobile.
                     }
                 });
 

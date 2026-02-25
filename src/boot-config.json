@@ -29,7 +29,7 @@
         {
             "type": "typing",
             "text": "Main Processor : Intel(R) Pentium(R) 4 3.00GHz",
-            "speed": 5
+            "speed": 3
         },
         {
             "type": "progress",
@@ -112,7 +112,7 @@
         },
         {
             "type": "wait",
-            "ms": 1500
+            "ms": 1000
         },
         {
             "type": "clear"
