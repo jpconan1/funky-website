@@ -391,7 +391,7 @@ export class PixelArt {
             return { x: zoomX, y: zoomY };
         };
 
-        canvas.addEventListener('mousedown', (e) => {
+        canvas.addEventListener('pointerdown', (e) => {
             if (this.currentTool === 'pencil') {
                 this.isDrawing = true;
                 draw(e);
@@ -413,11 +413,11 @@ export class PixelArt {
             }
         });
 
-        window.addEventListener('mousemove', (e) => {
+        window.addEventListener('pointermove', (e) => {
             draw(e);
             updateZoomBox(e);
         });
-        window.addEventListener('mouseup', () => {
+        window.addEventListener('pointerup', () => {
             this.isDrawing = false;
             this.lastCoords = null;
         });

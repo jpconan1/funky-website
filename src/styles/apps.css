@@ -254,6 +254,7 @@
     position: relative;
     cursor: crosshair;
     perspective: 1000px;
+    touch-action: none;
 }
 
 .sailor-icon {
@@ -566,6 +567,7 @@
     cursor: crosshair;
     image-rendering: pixelated;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    touch-action: none;
 }
 
 .pixel-art-viewer-body {
@@ -622,7 +624,8 @@
     overflow-y: auto;
 }
 
-.synth-sequencer {
+.synth-sequencer,
+.synth-sampler {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(238, 241, 219, 0.1);
     border-radius: 8px;
@@ -630,6 +633,7 @@
 }
 
 .sequencer-title,
+.sampler-title,
 .timeline-title {
     font-family: var(--bios-font);
     font-size: 0.8rem;
@@ -638,7 +642,8 @@
     letter-spacing: 2px;
 }
 
-.sequencer-grid {
+.sequencer-grid,
+.sampler-grid {
     display: flex;
     gap: 4px;
     margin-bottom: 15px;
@@ -660,21 +665,59 @@
     background: rgba(0, 255, 202, 0.1);
 }
 
-.step-cell {
+.step-cell,
+.sampler-cell {
     height: 15px;
     background: rgba(238, 241, 219, 0.05);
     border-radius: 2px;
     cursor: pointer;
     transition: all 0.1s;
+    position: relative;
 }
 
-.step-cell:hover {
+.sampler-cell {
+    height: 25px;
+}
+
+.step-cell:hover,
+.sampler-cell:hover {
     background: rgba(238, 241, 219, 0.15);
 }
 
 .step-cell.active {
     background: #00ffca;
     box-shadow: 0 0 10px rgba(0, 255, 202, 0.5);
+}
+
+.sampler-cell.active {
+    background: #ff007a;
+    box-shadow: 0 0 10px rgba(255, 0, 122, 0.5);
+}
+
+.sampler-row-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 60px;
+    padding: 8px 0;
+    justify-content: space-around;
+}
+
+.sampler-label {
+    font-size: 0.6rem;
+    font-family: var(--bios-font);
+    opacity: 0.5;
+    text-align: right;
+    padding-right: 8px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.sampler-flex {
+    display: flex;
+    gap: 10px;
 }
 
 .sequencer-controls {
@@ -693,6 +736,8 @@
     flex-direction: column;
     align-items: center;
     gap: 5px;
+    cursor: pointer;
+    touch-action: none;
 }
 
 .synth-knob::after {
@@ -708,6 +753,7 @@
     background: #1a1a1e;
     border: 2px solid #eef1db33;
     position: relative;
+    pointer-events: none;
 }
 
 .knob-dial::before {
@@ -798,6 +844,8 @@
     background: #00ffca;
     color: #000;
 }
+
+
 
 .block-delete {
     position: absolute;

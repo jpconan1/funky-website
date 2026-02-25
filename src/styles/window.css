@@ -54,6 +54,7 @@
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
+    touch-action: none;
 }
 
 .window-header:active {
@@ -139,6 +140,7 @@
     cursor: nwse-resize;
     background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.3) 50%);
     z-index: 10;
+    touch-action: none;
 }
 
 .window-resize-handle:hover {

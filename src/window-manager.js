@@ -4,9 +4,9 @@ export class WindowManager {
         this.highestZIndex = 100;
         this._desktop = null;
 
-        // Handle global mouse events for dragging and resizing
-        window.addEventListener('mousemove', (e) => this.handleMouseMove(e));
-        window.addEventListener('mouseup', () => this.handleMouseUp());
+        // Handle global pointer events for dragging and resizing (covers mouse and touch)
+        window.addEventListener('pointermove', (e) => this.handlePointerMove(e));
+        window.addEventListener('pointerup', () => this.handlePointerUp());
 
         this.activeWindow = null;
         this.isDragging = false;
@@ -80,12 +80,12 @@ export class WindowManager {
         const closeBtn = win.querySelector('.window-close-btn');
         const resizeHandle = win.querySelector('.window-resize-handle');
 
-        header.addEventListener('mousedown', (e) => {
+        header.addEventListener('pointerdown', (e) => {
             this.focusWindow(windowData);
             this.startDragging(e, windowData);
         });
 
-        win.addEventListener('mousedown', () => {
+        win.addEventListener('pointerdown', () => {
             this.focusWindow(windowData);
         });
 
@@ -94,7 +94,7 @@ export class WindowManager {
             this.closeWindow(windowData);
         });
 
-        resizeHandle.addEventListener('mousedown', (e) => {
+        resizeHandle.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
             this.startResizing(e, windowData);
         });
@@ -139,7 +139,7 @@ export class WindowManager {
         windowData.element.classList.add('window-resizing');
     }
 
-    handleMouseMove(e) {
+    handlePointerMove(e) {
         if (!this.activeWindow) return;
 
         if (this.isDragging) {
@@ -167,7 +167,7 @@ export class WindowManager {
         }
     }
 
-    handleMouseUp() {
+    handlePointerUp() {
         if (this.activeWindow) {
             this.activeWindow.element.classList.remove('window-moving');
             this.activeWindow.element.classList.remove('window-resizing');

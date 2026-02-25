@@ -458,13 +458,21 @@ export async function initDesktop() {
         Composite.add(engine.world, body);
         iconPairs.push({ element: icon, body, file });
 
+        let lastClickTime = 0;
         icon.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Deselect others
-            document.querySelectorAll('.icon.selected').forEach(el => {
-                if (el !== icon) el.classList.remove('selected');
-            });
-            icon.classList.add('selected');
+            const now = Date.now();
+            if (now - lastClickTime < 300) {
+                openFile(file);
+                lastClickTime = 0;
+            } else {
+                // Deselect others
+                document.querySelectorAll('.icon.selected').forEach(el => {
+                    if (el !== icon) el.classList.remove('selected');
+                });
+                icon.classList.add('selected');
+                lastClickTime = now;
+            }
         });
 
         icon.addEventListener('dblclick', async (e) => {
@@ -601,6 +609,23 @@ export async function initDesktop() {
 
         Composite.add(engine.world, binBody);
         iconPairs.push({ element: bin, body: binBody });
+
+        let lastClickTime = 0;
+        bin.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const now = Date.now();
+            if (now - lastClickTime < 300) {
+                openBinWindow();
+                lastClickTime = 0;
+            } else {
+                // Deselect others
+                document.querySelectorAll('.icon.selected').forEach(el => {
+                    if (el !== bin) el.classList.remove('selected');
+                });
+                bin.classList.add('selected');
+                lastClickTime = now;
+            }
+        });
 
         bin.addEventListener('dblclick', async (e) => {
             e.stopPropagation();

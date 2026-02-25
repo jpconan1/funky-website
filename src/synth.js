@@ -15,6 +15,16 @@ export class Synth {
 
         this.timelineData = [[], [], [], []]; // 4 tracks
         this.scale = [440, 523.25, 587.33, 659.25, 783.99, 880, 1046.50, 1174.66];
+
+        // Bytebeat Sampler state
+        this.bytebeatT = [0, 0, 0, 0];
+        this.bytebeatFormulas = [
+            (t, m, s) => (t * (m * 5 + 1) & t >> (8 - Math.floor(s * 4))) | (t >> 4), // BASS
+            (t, m, s) => (t * (t >> 8 | t >> (11 - Math.floor(s * 3)))) & (63 + Math.floor(m * 128)), // DRUM
+            (t, m, s) => (((t >> 8) | (t >> 12)) * (t >> 10 % (16 + Math.floor(s * 16)))) ^ (t * (m * 2 + 1)), // GLITCH
+            (t, m, s) => (t * (5 + Math.floor(s * 5)) & t >> 7) | (t * 3 & t >> (10 - Math.floor(m * 5))) // LEAD
+        ];
+        this.voiceBuffers = [[], [], [], []]; // For visualization
     }
 
     openNewFile() {
@@ -87,6 +97,30 @@ export class Synth {
                         </div>
                     </div>
 
+                    <div class="synth-sampler">
+                        <div class="sampler-title">DIGITAL SAMPLER (BYTEBEAT)</div>
+                        <div class="sampler-flex">
+                            <div class="sampler-row-labels">
+                                <div class="sampler-label">BASS</div>
+                                <div class="sampler-label">DRUM</div>
+                                <div class="sampler-label">GLITCH</div>
+                                <div class="sampler-label">LEAD</div>
+                            </div>
+                            <div class="sampler-grid">
+                                ${Array(16).fill(0).map((_, i) => `<div class="step-column" data-step="${i}">
+                                    ${Array(4).fill(0).map((_, j) => `<div class="sampler-cell" data-voice="${j}"></div>`).join('')}
+                                </div>`).join('')}
+                            </div>
+                            <div class="sampler-visualizers">
+                                ${Array(4).fill(0).map((_, i) => `
+                                    <div class="voice-viz-container">
+                                        <canvas class="voice-viz" data-voice="${i}" width="100" height="25"></canvas>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="synth-timeline">
                         <div class="timeline-title">TIMELINE</div>
                         <div class="timeline-tracks">
@@ -137,8 +171,14 @@ export class Synth {
             });
         }
 
-        // Cell toggling (visual only for now)
+        // Cell toggling
         element.querySelectorAll('.step-cell').forEach(cell => {
+            cell.addEventListener('click', () => {
+                cell.classList.toggle('active');
+            });
+        });
+
+        element.querySelectorAll('.sampler-cell').forEach(cell => {
             cell.addEventListener('click', () => {
                 cell.classList.toggle('active');
             });
@@ -166,14 +206,15 @@ export class Synth {
             let startY = 0;
             let startValue = parseFloat(knob.dataset.value);
 
-            knob.addEventListener('mousedown', (e) => {
+            knob.addEventListener('pointerdown', (e) => {
                 isDragging = true;
                 startY = e.clientY;
                 startValue = parseFloat(knob.dataset.value);
                 document.body.style.cursor = 'ns-resize';
+                knob.setPointerCapture(e.pointerId); // Better than global listeners
             });
 
-            window.addEventListener('mousemove', (e) => {
+            knob.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
                 const delta = (startY - e.clientY) / 100;
                 let newValue = Math.max(0, Math.min(1, startValue + delta));
@@ -181,10 +222,11 @@ export class Synth {
                 knob.querySelector('.knob-dial').style.transform = `rotate(${newValue * 270 - 135}deg)`;
             });
 
-            window.addEventListener('mouseup', () => {
+            knob.addEventListener('pointerup', (e) => {
                 if (isDragging) {
                     isDragging = false;
                     document.body.style.cursor = 'default';
+                    knob.releasePointerCapture(e.pointerId);
                 }
             });
 
@@ -423,6 +465,15 @@ export class Synth {
             const noteIndex = parseInt(cell.dataset.note);
             this.playTone(this.scale[noteIndex], time, mood, shape);
         });
+
+        // Sampler
+        const samplerCol = element.querySelector(`.sampler-grid .step-column[data-step="${step}"]`);
+        if (samplerCol) {
+            samplerCol.querySelectorAll('.sampler-cell.active').forEach(cell => {
+                const voiceIndex = parseInt(cell.dataset.voice);
+                this.playBytebeat(voiceIndex, time, mood, shape);
+            });
+        }
     }
 
     scheduleTimelineTick(measure, step, time, win) {
@@ -441,6 +492,14 @@ export class Synth {
                 notesAtStep.forEach(c => {
                     this.playTone(this.scale[c.note], time, loopData.knobs.mood, loopData.knobs.shape);
                 });
+
+                // Sampler data in timeline
+                if (loopData.sampler) {
+                    const samplerAtStep = loopData.sampler.filter(c => parseInt(c.step) === step);
+                    samplerAtStep.forEach(c => {
+                        this.playBytebeat(c.voice, time, loopData.knobs.mood, loopData.knobs.shape);
+                    });
+                }
             }
         }
     }
@@ -478,6 +537,33 @@ export class Synth {
         osc.stop(time + attack + decay + release);
     }
 
+    playBytebeat(index, time, mood, shape) {
+        const sampleRate = 8000;
+        const duration = 0.15; // 150ms slice
+        const buffer = this.audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < data.length; i++) {
+            const val = this.bytebeatFormulas[index](this.bytebeatT[index], mood, shape) & 255;
+            data[i] = (val / 127.5) - 1.0;
+            this.bytebeatT[index]++;
+        }
+
+        const source = this.audioCtx.createBufferSource();
+        source.buffer = buffer;
+        const gain = this.audioCtx.createGain();
+        gain.gain.value = 0.15;
+
+        // Apply a quick fade out to prevent clicks
+        gain.gain.setValueAtTime(0.15, time + duration - 0.01);
+        gain.gain.linearRampToValueAtTime(0, time + duration);
+
+        source.connect(gain);
+        gain.connect(this.masterGain);
+
+        source.start(time);
+    }
+
     save() {
         // ... handled by handleSave ...
     }
@@ -499,11 +585,19 @@ export class Synth {
             cells.push({ step, note });
         });
 
+        const sampler = [];
+        element.querySelectorAll('.sampler-cell.active').forEach(cell => {
+            const step = cell.parentElement.dataset.step;
+            const voice = parseInt(cell.dataset.voice);
+            sampler.push({ step, voice });
+        });
+
         const moodKnob = element.querySelector('.synth-knob[data-label="MOOD"]');
         const shapeKnob = element.querySelector('.synth-knob[data-label="SHAPE"]');
 
         return {
             cells: cells,
+            sampler: sampler,
             knobs: {
                 mood: parseFloat(moodKnob.dataset.value),
                 shape: parseFloat(shapeKnob.dataset.value)
@@ -527,12 +621,22 @@ export class Synth {
 
     loadSequencerData(element, data) {
         element.querySelectorAll('.step-cell').forEach(c => c.classList.remove('active'));
+        element.querySelectorAll('.sampler-cell').forEach(c => c.classList.remove('active'));
+
         if (data.cells) {
             data.cells.forEach(c => {
-                const cell = element.querySelector(`.step-column[data-step="${c.step}"] .step-cell[data-note="${c.note}"]`);
+                const cell = element.querySelector(`.sequencer-grid .step-column[data-step="${c.step}"] .step-cell[data-note="${c.note}"]`);
                 if (cell) cell.classList.add('active');
             });
         }
+
+        if (data.sampler) {
+            data.sampler.forEach(s => {
+                const cell = element.querySelector(`.sampler-grid .step-column[data-step="${s.step}"] .sampler-cell[data-voice="${s.voice}"]`);
+                if (cell) cell.classList.add('active');
+            });
+        }
+
         if (data.knobs) {
             const moodKnob = element.querySelector('.synth-knob[data-label="MOOD"]');
             const shapeKnob = element.querySelector('.synth-knob[data-label="SHAPE"]');

@@ -166,7 +166,7 @@ export class Sailor {
         let grabbedBody = null;
         let lastMousePos = { x: 0, y: 0 };
 
-        container.addEventListener('mousedown', (e) => {
+        container.addEventListener('pointerdown', (e) => {
             const rect = container.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -209,7 +209,7 @@ export class Sailor {
             lastMousePos = { x, y };
         });
 
-        window.addEventListener('mousemove', (e) => {
+        window.addEventListener('pointermove', (e) => {
             if (!container.isConnected) return;
             const rect = container.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -233,7 +233,7 @@ export class Sailor {
             lastMousePos = { x, y };
         });
 
-        window.addEventListener('mouseup', () => {
+        window.addEventListener('pointerup', () => {
             if (grabbedBody) {
                 // Add a little extra kick on release if moving fast
                 const speed = grabbedBody.speed;

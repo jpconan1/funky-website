@@ -138,7 +138,8 @@ export async function getMessages() {
         .from('messages')
         .select('*')
         .or('is_binned.eq.false,is_binned.is.null')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Prevent loading hundreds of MBs if spammed
 
     if (error) {
         console.error('Error fetching guestbook messages:', error);
@@ -154,7 +155,8 @@ export async function getBinnedMessages() {
         .from('messages')
         .select('*')
         .eq('is_binned', true)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50);
 
     if (error) {
         console.error('Error fetching binned messages:', error);
