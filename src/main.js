@@ -1,5 +1,6 @@
 import './style.css'
 import bootConfig from './boot-config.json'
+import epaLogo from './assets/epa.png'
 
 const app = document.querySelector('#app')
 
@@ -24,16 +25,15 @@ async function typeText(text, speed = 50) {
 async function runBootSequence() {
   const { header, sequence } = bootConfig
 
-  // Header with Energy Star logo from config
+  // Header with EPA logo from assets
   app.innerHTML = `
     <div class="logo-header">
       <div class="bios-info">
         <div class="line">${header.biosVersion}</div>
         <div class="line">${header.kernelRevision}</div>
       </div>
-      <div class="energy-star">
-        ${header.energyStarLabel}<br/>
-        ${header.energyStarSub}
+      <div class="energy-star-img">
+        <img src="${epaLogo}" alt="EPA logo">
       </div>
     </div>
   `

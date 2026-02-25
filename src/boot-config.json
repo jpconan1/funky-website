@@ -1,9 +1,7 @@
 {
     "header": {
         "biosVersion": "JP Conan's Personal Website",
-        "kernelRevision": "V0.1",
-        "energyStarLabel": "ENERGY STAR",
-        "energyStarSub": "EPA POLLUTION PREVENTER"
+        "kernelRevision": "V0.1"
     },
     "sequence": [
         {
@@ -27,9 +25,8 @@
             "text": ""
         },
         {
-            "type": "typing",
-            "text": "Main Processor : Intel(R) Pentium(R) 4 3.00GHz",
-            "speed": 3
+            "type": "instant",
+            "text": "Main Processor : Intel(R) Pentium(R) 4 3.00GHz"
         },
         {
             "type": "progress",

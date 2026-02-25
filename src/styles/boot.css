@@ -67,12 +67,12 @@ body {
     margin-bottom: 2rem;
 }
 
-.energy-star {
-    color: #ffff00;
-    text-align: center;
-    font-size: 0.8rem;
-    border: 2px solid #ffff00;
-    padding: 5px;
+.energy-star-img {
+    text-align: right;
+}
+
+.energy-star-img img {
+    image-rendering: pixelated;
 }
 
 .highlight {
