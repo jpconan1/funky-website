@@ -5,6 +5,8 @@ import { TextEditor } from './text-editor.js';
 import { PixelArt } from './pixel-art.js';
 import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage } from './supabase.js';
 import { Sailor } from './sailor.js';
+import { Synth } from './synth.js';
+
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -72,6 +74,7 @@ export async function initDesktop() {
     const wm = new WindowManager();
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
     const pixelArt = new PixelArt(wm, () => loadGuestbookMessages(true));
+    const synth = new Synth(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
 
     document.title = "Retro Desktop";
@@ -162,7 +165,8 @@ export async function initDesktop() {
 
     initContextMenu(desktop, {
         newTextFile: () => textEditor.openNewFile(),
-        newPixelArt: () => pixelArt.openNewFile()
+        newPixelArt: () => pixelArt.openNewFile(),
+        newSynth: () => synth.openNewFile()
     });
 
     // Fade in background video immediately since it's preloaded
@@ -546,7 +550,7 @@ export async function initDesktop() {
         }
 
         if (ext === '.loop') {
-            // return synthApp.open(file);
+            return synth.open(file);
         }
 
         // 5. Generic Fallback
@@ -863,5 +867,6 @@ export function getIconSymbol(file) {
     if (ext === '.pdf') return getSpriteHTML('icon-pdf');
     if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.draw') return getSpriteHTML('icon-img');
     if (ext === '.txt') return getSpriteHTML('icon-txt');
+    if (ext === '.loop') return '🎹'; // Use an emoji for now as we don't have a sprite
     return getSpriteHTML('icon-file');
 }

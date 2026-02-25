@@ -14,6 +14,10 @@ export function initContextMenu(desktopElement, actions) {
             <span class="menu-icon">🎨</span>
             <span>New pixel art...</span>
         </div>
+        <div class="context-menu-item" id="menu-new-synth">
+            <span class="menu-icon">🎹</span>
+            <span>New song (broken)</span>
+        </div>
     `;
 
     document.body.appendChild(menu);
@@ -54,5 +58,11 @@ export function initContextMenu(desktopElement, actions) {
         e.stopPropagation();
         menu.style.display = 'none';
         if (actions.newPixelArt) actions.newPixelArt();
+    });
+
+    menu.querySelector('#menu-new-synth').addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.style.display = 'none';
+        if (actions.newSynth) actions.newSynth();
     });
 }

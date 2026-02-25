@@ -65,7 +65,12 @@ export class WindowManager {
         const windowData = {
             id,
             element: win,
-            title
+            title,
+            setTitle: (newTitle) => {
+                windowData.title = newTitle;
+                const titleSpan = win.querySelector('.window-title');
+                if (titleSpan) titleSpan.textContent = newTitle;
+            }
         };
 
         this.windows.push(windowData);

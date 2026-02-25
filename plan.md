@@ -1,41 +1,46 @@
 # JP-OS App Development Plan
 
 ## Overview
-Building out the core application suite for JP-OS, moving from simple text display to a modular, app-based ecosystem.
+Building out a "Toy OS" application suite. Apps are playgrounds for creation, following the "Ink on Paper" rule: Freedom within the app, but permanence once saved to the cloud.
 
 ## 1. The Architecture: "The File-App Association"
-- **The Registry**: Transform the `openFile` logic in `desktop.js` into a robust App Registry.
-- **Workflow**: 
-    1. Identify file extension or `isCloud` status.
-    2. Lookup associated App class/handler.
-    3. Initialize App within a new Window Manager window.
-- **Persistence**: All apps will interface with `supabase.js` to save/load data from the `messages` table. Note: once a file is saved in JP-OS, it cannot be edited (the "Ink on Paper" rule). Systems for creating new files from existing ones will be implemented later.
+- **The Registry**: Robust App Registry in `desktop.js`.
+- **Persistence**: Interfaces with `supabase.js`. Once a file is saved, it is read-only. Editing requires "Saving As" a new version or deleting the old one.
 
 ## 2. App Roadmap
 
 ### A. Rich Text Editor (Priority: High)
-- **Tech**: `contenteditable` div, `document.execCommand`.
-- **Features**: 
-    - Formatting (Bold, Italic, Underline).
-    - Font selection (Pixel, Serif, Funky).
-    - Text sizing.
-- **Data**: Saves as HTML strings to Supabase.
+- **Tech**: `contenteditable` div.
+- **Features**: Formatting, Font selection (BIOS, Funky, Modern), Text sizing.
+- **Data**: Saves as HTML strings.
 
-### B. MS Paint Clone (Priority: Medium)
-- **Tech**: HTML5 Canvas.
-- **Features**: 
-    - Drawing tools (different from standard Paint, but pixel-focused).
-    - Color palette.
-    - Flood fill.
+### B. ImgEditor (Priority: Medium)
+- **New Name**: Formerly "Paint".
+- **Features**:
+    - **Pencil/Bucket/Eraser**: Standard digital tools.
+    - **Harmony Brush**: Detects the current HSL value and paints with complementary/triadic colors in a jittered or alternating pattern.
+    - **Dither Wand**: Applies retro checkerboard patterns between the "Primary" and "Secondary" colors for shading.
 - **Data**: Saves as Base64/DataURL.
 
-### C. Synth Loop Thing (Priority: Low / Research)
-- **Tech**: Web Audio API.
-- **Status**: TBD. This is the "experiment" app to be built last.
-- **Features**: Sequencer, oscillators, filters.
+### C. GrooveBox (Priority: Medium)
+- **Concept**: A 2004-style loop/step sequencer balancing ease-of-use with synthesis.
+- **Features**:
+    - **Step Sequencer**: 16-step grid for drums and melody.
+    - **Macro-Synth**: No complex oscillators; just simple knobs for "Mood" (Bright/Dark) and "Shape" (Short/Long).
+    - **Scale Snapping**: Constrains notes to specific scales (Major, Minor, Pentatonic) so you can't hit a "wrong" note.
+    - **"Mutate" Button**: Procedurally generates a new pattern or sound tweak to get the groove started.
+
+### D. The Composer (the "Super App")
+- **Purpose**: Unifies the ecosystem.
+- **Features**:
+    - **Multitrack Timeline**: Drag and drop `.txt`, `.draw` (ImgEditor), and `.loop` (GrooveBox) files from the desktop.
+    - **Transitions**: Simple Fade In/Out for each element.
+    - **Output**: Saves as a `.show` file—a multimedia zine that plays back the sequence.
 
 ## 3. Implementation Steps
-1. **Infrastructure**: Implement the File-App Registry in `desktop.js`.
-2. **Text Editor**: Upgrade `TextEditor.js`.
-3. **Paint**: Create `Paint.js`.
-4. **Synth**: Create `Synth.js`.
+1. **Infrastructure**: Finalize File-App Registry.
+2. **Text Editor**: Refine `TextEditor.js`.
+3. **ImgEditor**: Implement `ImgEditor.js` with Harmony/Dither tools.
+4. **GrooveBox**: Build the Web Audio sequencer.
+5. **The Composer**: Build the final assembly tool.
+

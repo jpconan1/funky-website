@@ -75,6 +75,9 @@ export class TextEditor {
                     <input type="checkbox" id="privacy-agreement" />
                     <label for="privacy-agreement">Public Note: <a href="#" id="view-privacy">Privacy Policy</a></label>
                 </div>
+                <div class="char-count-container">
+                    <span id="char-count">0</span>/5000
+                </div>
                 <div class="editor-status" id="editor-status">Ready</div>
             </div>
         `;
@@ -91,6 +94,23 @@ export class TextEditor {
         setTimeout(() => editor.focus(), 100);
 
         // Toolbar Logic
+        const charCountDisplay = content.querySelector('#char-count');
+        const MAX_CHARS = 5000;
+
+        const updateCharCount = () => {
+            const length = editor.innerText.trim().length;
+            charCountDisplay.textContent = length;
+            if (length > MAX_CHARS) {
+                charCountDisplay.style.color = '#ff4444';
+            } else if (length > MAX_CHARS * 0.9) {
+                charCountDisplay.style.color = '#ffaa00';
+            } else {
+                charCountDisplay.style.color = 'inherit';
+            }
+        };
+
+        editor.addEventListener('input', updateCharCount);
+
         content.querySelectorAll('.editor-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const command = btn.dataset.command;
@@ -124,6 +144,13 @@ export class TextEditor {
         saveBtn.addEventListener('click', async () => {
             const fileName = fileNameInput.value.trim() || 'untitled.txt';
             const body = editor.innerHTML.trim();
+            const textLength = editor.innerText.trim().length;
+
+            if (textLength > MAX_CHARS) {
+                status.textContent = `Note too long! (${textLength}/${MAX_CHARS})`;
+                status.style.color = '#ff4444';
+                return;
+            }
 
             if (!privacyCheckbox.checked) {
                 status.textContent = 'Please check the public note box.';

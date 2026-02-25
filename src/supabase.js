@@ -17,6 +17,26 @@ export async function saveMessage(fileName, content) {
     }
 
     const isImage = content.startsWith('data:image/');
+    const isLoop = fileName.toLowerCase().endsWith('.loop');
+
+    // Enforce character limits
+    const MAX_TEXT_LENGTH = 5000;
+    const MAX_IMAGE_LENGTH = 1048576; // 1MB
+    const MAX_LOOP_LENGTH = 50000;
+
+    if (isImage) {
+        if (content.length > MAX_IMAGE_LENGTH) {
+            throw new Error(`Image data is too large (${Math.round(content.length / 1024)}KB). Max is 1MB.`);
+        }
+    } else if (isLoop) {
+        if (content.length > MAX_LOOP_LENGTH) {
+            throw new Error(`Loop data is too large. Max is ${MAX_LOOP_LENGTH} characters.`);
+        }
+    } else {
+        if (content.length > MAX_TEXT_LENGTH) {
+            throw new Error(`Note is too long. Max is ${MAX_TEXT_LENGTH} characters.`);
+        }
+    }
 
     // We only sanitize if it's NOT an image. 
     // DOMPurify on a 1MB base64 string is extremely slow and can corrupt the image data.
