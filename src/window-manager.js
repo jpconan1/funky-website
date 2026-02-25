@@ -89,7 +89,7 @@ export class WindowManager {
             this.focusWindow(windowData);
         });
 
-        closeBtn.addEventListener('pointerup', (e) => {
+        closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeWindow(windowData);
         });
@@ -125,11 +125,6 @@ export class WindowManager {
             y: e.clientY - rect.top
         };
         windowData.element.classList.add('window-moving');
-        try {
-            e.target.setPointerCapture(e.pointerId);
-        } catch (err) {
-            console.warn('Pointer capture failed:', err);
-        }
     }
 
     startResizing(e, windowData) {
@@ -142,11 +137,6 @@ export class WindowManager {
             y: e.clientY
         };
         windowData.element.classList.add('window-resizing');
-        try {
-            e.target.setPointerCapture(e.pointerId);
-        } catch (err) {
-            console.warn('Pointer capture failed:', err);
-        }
     }
 
     handlePointerMove(e) {
@@ -218,8 +208,7 @@ export class WindowManager {
         okBtn.focus();
 
         return new Promise((resolve) => {
-            okBtn.addEventListener('pointerup', (e) => {
-                e.stopPropagation();
+            okBtn.addEventListener('click', () => {
                 this.closeWindow(win);
                 resolve(true);
             });
@@ -266,13 +255,11 @@ export class WindowManager {
         confirmBtn.focus();
 
         return new Promise((resolve) => {
-            confirmBtn.addEventListener('pointerup', (e) => {
-                e.stopPropagation();
+            confirmBtn.addEventListener('click', () => {
                 this.closeWindow(win);
                 resolve(true);
             });
-            cancelBtn.addEventListener('pointerup', (e) => {
-                e.stopPropagation();
+            cancelBtn.addEventListener('click', () => {
                 this.closeWindow(win);
                 resolve(false);
             });

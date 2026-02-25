@@ -32,7 +32,7 @@ export class Sailor {
 
     initPhysics(container, file, win, canvas) {
         const { Engine, Runner, Bodies, Composite, Events, Body, Vector } = Matter;
-        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
         const engine = Engine.create();
         engine.gravity.y = 0;
@@ -248,26 +248,11 @@ export class Sailor {
             `;
             container.appendChild(icon);
 
-            let startPos = { x: 0, y: 0 };
-            icon.addEventListener('pointerdown', (e) => {
-                startPos = { x: e.clientX, y: e.clientY };
-            });
-
-            icon.addEventListener('pointerup', (e) => {
-                const endPos = { x: e.clientX, y: e.clientY };
-                const dist = Math.sqrt((endPos.x - startPos.x) ** 2 + (endPos.y - startPos.y) ** 2);
-
-                if (isTouchDevice && dist < 10) {
-                    e.stopPropagation();
-                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
-                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
-                }
-            });
-
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (!isTouchDevice) {
-                    // Selection logic handled by container pointerdown
+                if (isTouchDevice) {
+                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
+                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
                 }
             });
 
