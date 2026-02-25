@@ -32,6 +32,7 @@ export class Sailor {
 
     initPhysics(container, file, win, canvas) {
         const { Engine, Runner, Bodies, Composite, Events, Body, Vector } = Matter;
+        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
         const engine = Engine.create();
         engine.gravity.y = 0;
@@ -187,18 +188,6 @@ export class Sailor {
                     container.querySelectorAll('.icon').forEach(el => el.classList.remove('selected'));
                     pair.element.classList.add('selected');
 
-                    const now = Date.now();
-                    if (now - (pair.lastClickTime || 0) < 300) {
-                        // Defer window creation until after the event bubble finishes focusing this window
-                        setTimeout(() => {
-                            if (pair.file.type === 'directory' || pair.file.contents) this.openDirectory(pair.file);
-                            else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: pair.file }));
-                        }, 0);
-                        grabbedBody = null;
-                        pair.lastClickTime = 0;
-                    } else {
-                        pair.lastClickTime = now;
-                    }
                     triggerRipple(x, y, 60);
                 }
             } else {
@@ -258,6 +247,22 @@ export class Sailor {
                 <div class="icon-label">${formatFileName(child.name)}</div>
             `;
             container.appendChild(icon);
+
+            icon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (isTouchDevice) {
+                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
+                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
+                }
+            });
+
+            icon.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                if (!isTouchDevice) {
+                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
+                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
+                }
+            });
 
             const body = Bodies.rectangle(
                 Math.random() * container.clientWidth,

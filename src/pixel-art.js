@@ -1,4 +1,4 @@
-import { saveMessage } from './supabase.js';
+import { saveMessage, MEDIA_STAMP, stripStamp } from './supabase.js';
 
 export class PixelArt {
     constructor(windowManager, onSaveSuccess = null) {
@@ -51,7 +51,7 @@ export class PixelArt {
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
             };
-            img.src = file.content;
+            img.src = stripStamp(file.content);
         }
 
         exportBtn.addEventListener('click', () => {
@@ -428,8 +428,8 @@ export class PixelArt {
                 fileName += '.draw';
             }
 
-            // For pixel art, we save as DataURL
-            const body = canvas.toDataURL('image/png');
+            // For pixel art, we save as DataURL, prepended with our security stamp
+            const body = MEDIA_STAMP + canvas.toDataURL('image/png');
 
             if (!privacyCheckbox.checked) {
                 status.textContent = 'Please check the public box.';

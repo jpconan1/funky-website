@@ -1,4 +1,4 @@
-import { saveMessage } from './supabase.js';
+import { saveMessage, MEDIA_STAMP, stripStamp } from './supabase.js';
 
 export class Synth {
     constructor(windowManager, onSave) {
@@ -41,7 +41,7 @@ export class Synth {
         // Populate data if it's an existing file
         if (file.content) {
             try {
-                const data = JSON.parse(file.content);
+                const data = JSON.parse(stripStamp(file.content));
                 this.loadData(win, data);
             } catch (e) {
                 console.error('Failed to parse loop data', e);
@@ -336,9 +336,9 @@ export class Synth {
 
         const fullFilename = name.endsWith('.loop') ? name : name + '.loop';
 
-        // Collect data
+        // Collect data and prepend our security stamp
         const data = this.collectData(element);
-        const content = JSON.stringify(data);
+        const content = MEDIA_STAMP + JSON.stringify(data);
 
         try {
             status.textContent = 'Saving...';
