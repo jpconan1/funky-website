@@ -652,6 +652,54 @@
     border-radius: 4px;
 }
 
+.sequencer-flex {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.sequencer-row-labels {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 0;
+}
+
+.track-selector {
+    width: 50px;
+    height: 15px;
+    font-size: 0.55rem;
+    font-family: var(--bios-font);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+    user-select: none;
+    border: 1px solid rgba(238, 241, 219, 0.1);
+}
+
+.track-selector.voice-osc {
+    background: rgba(0, 255, 202, 0.1);
+    color: #00ffca;
+}
+
+.track-selector.voice-osc:hover {
+    background: #00ffca;
+    color: #000;
+}
+
+.track-selector.voice-bb {
+    background: rgba(255, 0, 122, 0.1);
+    color: #ff007a;
+}
+
+.track-selector.voice-bb:hover {
+    background: #ff007a;
+    color: #000;
+}
+
 .step-column {
     flex: 1;
     display: flex;
@@ -718,6 +766,97 @@
 .sampler-flex {
     display: flex;
     gap: 10px;
+    align-items: center;
+}
+
+.sampler-visualizers {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100px;
+    padding: 8px 0;
+}
+
+.voice-viz-container {
+    height: 25px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 2px;
+    border: 1px solid rgba(238, 241, 19, 0.05);
+    overflow: hidden;
+}
+
+.voice-viz {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Formula Inputs */
+.sampler-formulas {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid rgba(238, 241, 219, 0.05);
+}
+
+.formula-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.formula-label {
+    width: 60px;
+    font-size: 0.6rem;
+    font-family: var(--bios-font);
+    opacity: 0.5;
+    text-transform: uppercase;
+}
+
+.formula-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(238, 241, 219, 0.1);
+    color: #00ffca;
+    font-family: var(--bios-font);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    outline: none;
+}
+
+.formula-input:focus {
+    border-color: #00ffca;
+    background: rgba(0, 255, 202, 0.05);
+}
+
+.formula-presets {
+    display: flex;
+    gap: 4px;
+}
+
+.preset-btn {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(238, 241, 219, 0.1);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 2px;
+    font-size: 0.6rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.preset-btn:hover {
+    background: #00ffca;
+    color: #000;
+    border-color: #00ffca;
 }
 
 .sequencer-controls {
@@ -778,6 +917,72 @@
     font-size: 0.8rem;
     cursor: pointer;
     border-radius: 4px;
+}
+
+.synth-bpm-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 100px;
+}
+
+.synth-bpm-group label {
+    font-family: var(--bios-font);
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+.bpm-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(238, 241, 19, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.bpm-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #00ffca;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.synth-volume-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 60px;
+}
+
+.synth-volume-group label {
+    font-family: var(--bios-font);
+    font-size: 0.6rem;
+    opacity: 0.6;
+}
+
+.volume-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(238, 241, 19, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #ff007a;
+    border-radius: 50%;
+    cursor: pointer;
 }
 
 .mutate-btn:hover,

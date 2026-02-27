@@ -18,24 +18,96 @@ export class Synth {
 
         // Bytebeat Sampler state
         this.bytebeatT = [0, 0, 0, 0];
-        this.bytebeatFormulas = [
-            (t, m, s) => (t * (m * 5 + 1) & t >> (8 - Math.floor(s * 4))) | (t >> 4), // BASS
-            (t, m, s) => (t * (t >> 8 | t >> (11 - Math.floor(s * 3)))) & (63 + Math.floor(m * 128)), // DRUM
-            (t, m, s) => (((t >> 8) | (t >> 12)) * (t >> 10 % (16 + Math.floor(s * 16)))) ^ (t * (m * 2 + 1)), // GLITCH
-            (t, m, s) => (t * (5 + Math.floor(s * 5)) & t >> 7) | (t * 3 & t >> (10 - Math.floor(m * 5))) // LEAD
+        this.formulaStrings = [
+            "(t * (m * 5 + 1) & t >> (8 - Math.floor(s * 4))) | (t >> 4)", // BASS
+            "(t * (t >> 8 | t >> (11 - Math.floor(s * 3)))) & (63 + Math.floor(m * 128))", // DRUM
+            "(((t >> 8) | (t >> 12)) * (t >> 10 % (16 + Math.floor(s * 16)))) ^ (t * (m * 2 + 1))", // GLITCH
+            "(t * (5 + Math.floor(s * 5)) & t >> 7) | (t * 3 & t >> (10 - Math.floor(m * 5)))" // LEAD
         ];
+        this.bytebeatFormulas = [];
+        this.formulaStrings.forEach((f, i) => this.compileFormula(i, f));
+
+        this.presets = [
+            [
+                "(t * (m * 5 + 1) & t >> (8 - Math.floor(s * 4))) | (t >> 4)",
+                "t * ((t>>12|t>>8)&63&t>>4)",
+                "(t/2 & t>>8) * (t>>16) | t/4"
+            ],
+            [
+                "(t * (t >> 8 | t >> (11 - Math.floor(s * 3)))) & (63 + Math.floor(m * 128))",
+                "(t*9&t>>4|t*5&t>>7|t*3&t/1024)-1",
+                "t * (t>>5|t>>s*10) >> (t>>m*12)"
+            ],
+            [
+                "(((t >> 8) | (t >> 12)) * (t >> 10 % (16 + Math.floor(s * 16)))) ^ (t * (m * 2 + 1))",
+                "(t>>6|t|t>>(t>>16))&10+((t>>11)&7)",
+                "t*(t>>11&t>>8&123&t>>m*5)"
+            ],
+            [
+                "(t * (5 + Math.floor(s * 5)) & t >> 7) | (t * 3 & t >> (10 - Math.floor(m * 5)))",
+                "t * (t>>8+m*4 & t>>4+s*4)",
+                "(t & t>>s*12) | (t>>m*8)"
+            ]
+        ];
+
         this.voiceBuffers = [[], [], [], []]; // For visualization
+        this.vizContexts = [null, null, null, null];
+        this.animationFrameID = null;
+
+        // Sequencer track voices
+        this.sequencerVoices = Array(8).fill('osc');
+    }
+
+    compileFormula(index, formulaStr) {
+        try {
+            // Create a function that takes t, m, s and returns the result of the formula
+            this.bytebeatFormulas[index] = new Function('t', 'm', 's', `
+                try {
+                    return (${formulaStr});
+                } catch(e) {
+                    return 0;
+                }
+            `);
+            this.formulaStrings[index] = formulaStr;
+        } catch (e) {
+            console.warn('Invalid bytebeat formula:', e);
+            this.bytebeatFormulas[index] = () => 0;
+        }
+    }
+
+    scrambleFormula(formula) {
+        // Change numbers slightly
+        let scrambled = formula.replace(/\d+/g, (match) => {
+            const num = parseInt(match);
+            if (num <= 1) return match;
+            const jitter = Math.floor(Math.random() * 5) - 2; // -2 to +2
+            return Math.max(1, num + jitter);
+        });
+
+        // Swap bitwise operators occasionally
+        const bitOps = ['&', '|', '^'];
+        scrambled = scrambled.replace(/[&|^]/g, (match) => {
+            return Math.random() > 0.85 ? bitOps[Math.floor(Math.random() * 3)] : match;
+        });
+
+        // Toggle shifts occasionally
+        scrambled = scrambled.replace(/>>/g, (match) => Math.random() > 0.9 ? '<<' : match);
+        scrambled = scrambled.replace(/<</g, (match) => Math.random() > 0.9 ? '>>' : match);
+
+        return scrambled;
     }
 
     openNewFile() {
         const content = this.createAppSkeleton();
         const win = this.wm.createWindow('New Song (broken) - Synth', content);
+        this.initVisualizers(win);
         this.setupEventListeners(win, null);
     }
 
     open(file) {
         const content = this.createAppSkeleton(file);
         const win = this.wm.createWindow(`Synth - ${file.name}`, content);
+        this.initVisualizers(win);
         this.setupEventListeners(win, file);
 
         // Populate data if it's an existing file
@@ -78,10 +150,15 @@ export class Synth {
                 <div class="synth-main">
                     <div class="synth-sequencer">
                         <div class="sequencer-title">STEP SEQUENCER</div>
-                        <div class="sequencer-grid">
-                            ${Array(16).fill(0).map((_, i) => `<div class="step-column" data-step="${i}">
-                                ${Array(8).fill(0).map((_, j) => `<div class="step-cell" data-note="${7 - j}"></div>`).join('')}
-                            </div>`).join('')}
+                        <div class="sequencer-flex">
+                            <div class="sequencer-row-labels">
+                                ${Array(8).fill(0).map((_, i) => `<div class="track-selector" data-track="${7 - i}">OSC</div>`).join('')}
+                            </div>
+                            <div class="sequencer-grid">
+                                ${Array(16).fill(0).map((_, i) => `<div class="step-column" data-step="${i}">
+                                    ${Array(8).fill(0).map((_, j) => `<div class="step-cell" data-note="${7 - j}"></div>`).join('')}
+                                </div>`).join('')}
+                            </div>
                         </div>
                         <div class="sequencer-controls">
                             <div class="synth-knob-group">
@@ -91,6 +168,14 @@ export class Synth {
                                 <div class="synth-knob" data-label="SHAPE" data-value="0.5">
                                     <div class="knob-dial"></div>
                                 </div>
+                            </div>
+                            <div class="synth-bpm-group">
+                                <label>BPM: <span class="bpm-value">120</span></label>
+                                <input type="range" class="bpm-slider" min="60" max="200" value="120">
+                            </div>
+                            <div class="synth-volume-group">
+                                <label>VOL</label>
+                                <input type="range" class="volume-slider" min="0" max="100" value="50">
                             </div>
                             <button class="mutate-btn">MUTATE</button>
                             <button class="pack-btn">PACK LOOP</button>
@@ -118,6 +203,19 @@ export class Synth {
                                     </div>
                                 `).join('')}
                             </div>
+                        </div>
+                        <div class="sampler-formulas">
+                            ${[0, 1, 2, 3].map(i => `
+                                <div class="formula-row">
+                                    <div class="formula-label">${['BASS', 'DRUM', 'GLITCH', 'LEAD'][i]}</div>
+                                    <input type="text" class="formula-input" data-voice="${i}" value="${this.formulaStrings[i]}" placeholder="t * ...">
+                                    <div class="formula-presets">
+                                        <div class="preset-btn" data-voice="${i}" data-preset="0" title="Preset 1">1</div>
+                                        <div class="preset-btn" data-voice="${i}" data-preset="1" title="Preset 2">2</div>
+                                        <div class="preset-btn" data-voice="${i}" data-preset="2" title="Preset 3">3</div>
+                                    </div>
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
 
@@ -295,6 +393,70 @@ export class Synth {
                 }
             });
         }
+
+        // Track selector voice switching
+        element.querySelectorAll('.track-selector').forEach(selector => {
+            selector.addEventListener('click', () => {
+                const trackIdx = parseInt(selector.dataset.track);
+                const currentVoice = this.sequencerVoices[trackIdx];
+                let nextVoice = 'osc';
+
+                if (currentVoice === 'osc') nextVoice = 'bb0';
+                else if (currentVoice === 'bb0') nextVoice = 'bb1';
+                else if (currentVoice === 'bb1') nextVoice = 'bb2';
+                else if (currentVoice === 'bb2') nextVoice = 'bb3';
+                else nextVoice = 'osc';
+
+                this.sequencerVoices[trackIdx] = nextVoice;
+                selector.textContent = nextVoice.toUpperCase();
+                selector.className = 'track-selector ' + (nextVoice.startsWith('bb') ? 'voice-bb' : 'voice-osc');
+            });
+        });
+
+        // BPM slider
+        const bpmSlider = element.querySelector('.bpm-slider');
+        const bpmValue = element.querySelector('.bpm-value');
+        if (bpmSlider) {
+            bpmSlider.addEventListener('input', (e) => {
+                this.bpm = parseInt(e.target.value);
+                bpmValue.textContent = this.bpm;
+            });
+        }
+
+        // Formula inputs
+        element.querySelectorAll('.formula-input').forEach(input => {
+            input.addEventListener('change', (e) => {
+                const voice = parseInt(e.target.dataset.voice);
+                this.compileFormula(voice, e.target.value);
+            });
+        });
+
+        // Preset buttons
+        element.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const voice = parseInt(btn.dataset.voice);
+                const pIdx = parseInt(btn.dataset.preset);
+                const baseFormula = this.presets[voice][pIdx];
+                const scrambled = this.scrambleFormula(baseFormula);
+
+                const input = element.querySelector(`.formula-input[data-voice="${voice}"]`);
+                if (input) {
+                    input.value = scrambled;
+                    this.compileFormula(voice, scrambled);
+                }
+            });
+        });
+
+        // Volume slider
+        const volSlider = element.querySelector('.volume-slider');
+        if (volSlider) {
+            volSlider.addEventListener('input', (e) => {
+                const vol = parseInt(e.target.value) / 100;
+                if (this.masterGain) {
+                    this.masterGain.gain.setTargetAtTime(vol, this.audioCtx.currentTime, 0.1);
+                }
+            });
+        }
     }
 
     renderTimeline(win) {
@@ -370,6 +532,51 @@ export class Synth {
         }
     }
 
+    initVisualizers(win) {
+        const element = win.element;
+        const canvases = element.querySelectorAll('.voice-viz');
+        canvases.forEach((canvas, i) => {
+            this.vizContexts[i] = canvas.getContext('2d');
+        });
+    }
+
+    drawVisualizers() {
+        if (!this.isPlaying && !this.isTimelinePlaying) {
+            cancelAnimationFrame(this.animationFrameID);
+            return;
+        }
+
+        this.vizContexts.forEach((ctx, i) => {
+            if (!ctx) return;
+            const canvas = ctx.canvas;
+            const data = this.voiceBuffers[i];
+
+            // Background
+            ctx.fillStyle = '#0a0a0c';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (data && data.length > 0) {
+                ctx.beginPath();
+                ctx.strokeStyle = i === 1 ? '#ff007a' : '#00ffca'; // pink for drums, green for others
+                ctx.lineWidth = 1;
+
+                const step = canvas.width / data.length;
+                for (let j = 0; j < data.length; j++) {
+                    const x = j * step;
+                    const y = (data[j] + 1) * 0.5 * canvas.height;
+                    if (j === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+
+                // Slowly drain the buffer so it doesn't just stay static
+                if (Math.random() > 0.5) data.shift();
+            }
+        });
+
+        this.animationFrameID = requestAnimationFrame(() => this.drawVisualizers());
+    }
+
     togglePlayback(win, mode) {
         this.initAudio();
         if (this.audioCtx.state === 'suspended') {
@@ -404,6 +611,7 @@ export class Synth {
             this.currentStep = 0;
             this.nextTickTime = this.audioCtx.currentTime;
             this.scheduler(win, 'sequencer');
+            this.drawVisualizers();
         } else {
             this.isTimelinePlaying = true;
             timeBtn.textContent = '■ STOP';
@@ -412,6 +620,7 @@ export class Synth {
             this.currentTimelineStep = 0; // measure/block index
             this.nextTickTime = this.audioCtx.currentTime;
             this.scheduler(win, 'timeline');
+            this.drawVisualizers();
         }
     }
 
@@ -449,24 +658,35 @@ export class Synth {
 
     scheduleSequencerTick(step, time, win) {
         const element = win.element;
-        const col = element.querySelector(`.step-column[data-step="${step}"]`);
+        // Highlight columns in both grids
+        const columns = element.querySelectorAll(`.step-column[data-step="${step}"]`);
 
         setTimeout(() => {
             if (!this.isPlaying) return;
             element.querySelectorAll('.step-column').forEach(c => c.classList.remove('highlight'));
-            col.classList.add('highlight');
+            columns.forEach(col => col.classList.add('highlight'));
         }, (time - this.audioCtx.currentTime) * 1000);
 
-        const activeCells = col.querySelectorAll('.step-cell.active');
         const mood = parseFloat(element.querySelector('.synth-knob[data-label="MOOD"]').dataset.value);
         const shape = parseFloat(element.querySelector('.synth-knob[data-label="SHAPE"]').dataset.value);
 
-        activeCells.forEach(cell => {
-            const noteIndex = parseInt(cell.dataset.note);
-            this.playTone(this.scale[noteIndex], time, mood, shape);
-        });
+        // Sequencer grid
+        const seqCol = element.querySelector(`.sequencer-grid .step-column[data-step="${step}"]`);
+        if (seqCol) {
+            seqCol.querySelectorAll('.step-cell.active').forEach(cell => {
+                const noteIndex = parseInt(cell.dataset.note);
+                const voice = this.sequencerVoices[noteIndex];
 
-        // Sampler
+                if (voice === 'osc') {
+                    this.playTone(this.scale[noteIndex], time, mood, shape);
+                } else {
+                    const voiceIdx = parseInt(voice.replace('bb', ''));
+                    this.playBytebeat(voiceIdx, time, mood, shape);
+                }
+            });
+        }
+
+        // Sampler grid (independent tracks)
         const samplerCol = element.querySelector(`.sampler-grid .step-column[data-step="${step}"]`);
         if (samplerCol) {
             samplerCol.querySelectorAll('.sampler-cell.active').forEach(cell => {
@@ -493,13 +713,10 @@ export class Synth {
                     this.playTone(this.scale[c.note], time, loopData.knobs.mood, loopData.knobs.shape);
                 });
 
-                // Sampler data in timeline
-                if (loopData.sampler) {
-                    const samplerAtStep = loopData.sampler.filter(c => parseInt(c.step) === step);
-                    samplerAtStep.forEach(c => {
-                        this.playBytebeat(c.voice, time, loopData.knobs.mood, loopData.knobs.shape);
-                    });
-                }
+                const samplerAtStep = loopData.sampler.filter(c => parseInt(c.step) === step);
+                samplerAtStep.forEach(c => {
+                    this.playBytebeat(c.voice, time, loopData.knobs.mood, loopData.knobs.shape);
+                });
             }
         }
     }
@@ -539,23 +756,26 @@ export class Synth {
 
     playBytebeat(index, time, mood, shape) {
         const sampleRate = 8000;
-        const duration = 0.15; // 150ms slice
+        const duration = 0.2; // slightly longer slice
         const buffer = this.audioCtx.createBuffer(1, sampleRate * duration, sampleRate);
         const data = buffer.getChannelData(0);
 
+        const vizData = [];
         for (let i = 0; i < data.length; i++) {
             const val = this.bytebeatFormulas[index](this.bytebeatT[index], mood, shape) & 255;
             data[i] = (val / 127.5) - 1.0;
+            if (i % 8 === 0) vizData.push(data[i]);
             this.bytebeatT[index]++;
         }
+        this.voiceBuffers[index] = vizData;
 
         const source = this.audioCtx.createBufferSource();
         source.buffer = buffer;
         const gain = this.audioCtx.createGain();
-        gain.gain.value = 0.15;
+        gain.gain.value = 0.35; // increased volume
 
         // Apply a quick fade out to prevent clicks
-        gain.gain.setValueAtTime(0.15, time + duration - 0.01);
+        gain.gain.setValueAtTime(0.35, time + duration - 0.02);
         gain.gain.linearRampToValueAtTime(0, time + duration);
 
         source.connect(gain);
@@ -570,9 +790,12 @@ export class Synth {
 
     collectData(element) {
         return {
-            version: '1.1',
+            version: '1.3',
             type: 'synth-song',
+            bpm: this.bpm,
             timeline: this.timelineData,
+            formulas: this.formulaStrings,
+            voices: this.sequencerVoices,
             sequencer: this.collectSequencerData(element)
         };
     }
@@ -608,6 +831,29 @@ export class Synth {
     loadData(win, data) {
         const element = win.element;
         if (data.type === 'synth-song') {
+            if (data.bpm) {
+                this.bpm = data.bpm;
+                const bpmSlider = element.querySelector('.bpm-slider');
+                const bpmValue = element.querySelector('.bpm-value');
+                if (bpmSlider) bpmSlider.value = this.bpm;
+                if (bpmValue) bpmValue.textContent = this.bpm;
+            }
+            if (data.formulas) {
+                data.formulas.forEach((f, i) => {
+                    this.compileFormula(i, f);
+                    const input = element.querySelector(`.formula-input[data-voice="${i}"]`);
+                    if (input) input.value = f;
+                });
+            }
+            if (data.voices) {
+                this.sequencerVoices = data.voices;
+                element.querySelectorAll('.track-selector').forEach(sel => {
+                    const trackIdx = parseInt(sel.dataset.track);
+                    const voice = this.sequencerVoices[trackIdx];
+                    sel.textContent = voice.toUpperCase();
+                    sel.className = 'track-selector ' + (voice.startsWith('bb') ? 'voice-bb' : 'voice-osc');
+                });
+            }
             if (data.sequencer) this.loadSequencerData(element, data.sequencer);
             if (data.timeline) {
                 this.timelineData = data.timeline;
