@@ -3,7 +3,7 @@ import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
 import { PixelArt } from './pixel-art.js';
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP } from './supabase.js';
 import { Sailor } from './sailor.js';
 import { Synth } from './synth.js';
 
@@ -802,7 +802,8 @@ export async function initDesktop() {
                 let msgExt = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '.txt';
 
                 // Content-based fallback: if it looks like a DataURL image, it's likely a .draw file
-                if (msg.content && msg.content.startsWith('data:image/')) {
+                const isImgContent = msg.content && (msg.content.startsWith('data:image/') || msg.content.startsWith(MEDIA_STAMP + 'data:image/'));
+                if (isImgContent) {
                     if (msgExt !== '.draw' && msgExt !== '.png' && msgExt !== '.jpg' && msgExt !== '.jpeg') {
                         msgExt = '.draw';
                     }

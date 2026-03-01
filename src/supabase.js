@@ -27,7 +27,7 @@ export async function saveMessage(fileName, content) {
         throw new Error('Supabase is not initialized. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file and restart your dev server.');
     }
 
-    const isImage = content.startsWith('data:image/');
+    const isImage = content.startsWith('data:image/') || content.startsWith(MEDIA_STAMP + 'data:image/');
     const isLoop = fileName.toLowerCase().endsWith('.loop');
 
     // Enforce character limits
@@ -36,11 +36,11 @@ export async function saveMessage(fileName, content) {
     const MAX_LOOP_LENGTH = 50000;
 
     if (isImage) {
-        if (content.length > MAX_IMAGE_LENGTH) {
+        if (content.length > MAX_IMAGE_LENGTH + MEDIA_STAMP.length) {
             throw new Error(`Image data is too large (${Math.round(content.length / 1024)}KB). Max is 1MB.`);
         }
     } else if (isLoop) {
-        if (content.length > MAX_LOOP_LENGTH) {
+        if (content.length > MAX_LOOP_LENGTH + MEDIA_STAMP.length) {
             throw new Error(`Loop data is too large. Max is ${MAX_LOOP_LENGTH} characters.`);
         }
     } else {
