@@ -174,7 +174,32 @@ export class Paint {
                 const childWindow = iframe.contentWindow;
                 if (!childWindow) return;
 
-                // 1. Force 256x256 early and persistently
+                // Step 1: Persist JP-OS theme for all future loads via localStorage
+                try {
+                    childWindow.localStorage.setItem('jspaint theme', 'jp-os.css');
+                    // Disable seasonal override so our theme sticks
+                    childWindow.localStorage.setItem('jspaint disable seasonal theme', 'true');
+                } catch (e) { /* cross-origin or private browsing - ignore */ }
+
+                // Step 2: Apply the theme to the current session by polling for set_theme.
+                // set_theme is exposed via window.api_for_cypress_tests after app init.
+                const JP_OS_THEME = 'jp-os.css';
+                let themeAttempts = 0;
+                const applyTheme = () => {
+                    try {
+                        const api = childWindow.api_for_cypress_tests;
+                        if (api && api.set_theme) {
+                            api.set_theme(JP_OS_THEME);
+                            return; // done
+                        }
+                    } catch (e) { /* ignore */ }
+                    if (++themeAttempts < 30) { // try for up to ~3 seconds
+                        setTimeout(applyTheme, 100);
+                    }
+                };
+                setTimeout(applyTheme, 200); // slight delay for app to initialize
+
+                // 3. Force 256x256 early and persistently
                 const forceSize = () => {
                     if (childWindow.resize_canvas_and_save_dimensions) {
                         childWindow.resize_canvas_and_save_dimensions(256, 256);
