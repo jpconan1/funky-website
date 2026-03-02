@@ -10,6 +10,10 @@ export function initContextMenu(desktopElement, actions) {
             <span class="menu-icon">📄</span>
             <span>New text file...</span>
         </div>
+        <div class="context-menu-item" id="menu-new-paint">
+            <span class="menu-icon">🖌️</span>
+            <span>New drawing (Paint)...</span>
+        </div>
         <div class="context-menu-item" id="menu-new-pixel-art">
             <span class="menu-icon">🎨</span>
             <span>New pixel art...</span>
@@ -52,6 +56,12 @@ export function initContextMenu(desktopElement, actions) {
         e.stopPropagation();
         menu.style.display = 'none';
         if (actions.newTextFile) actions.newTextFile();
+    });
+
+    menu.querySelector('#menu-new-paint').addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.style.display = 'none';
+        if (actions.newPaint) actions.newPaint();
     });
 
     menu.querySelector('#menu-new-pixel-art').addEventListener('click', (e) => {

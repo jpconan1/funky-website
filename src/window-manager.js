@@ -265,4 +265,60 @@ export class WindowManager {
             });
         });
     }
+
+    prompt(message, defaultValue = '', options = {}) {
+        const {
+            title = 'Prompt',
+            confirmText = 'OK',
+            cancelText = 'Cancel'
+        } = options;
+
+        const content = document.createElement('div');
+        content.className = 'alert-container prompt-container';
+        content.innerHTML = `
+            <div class="alert-message">${message}</div>
+            <input type="text" class="prompt-input" value="${defaultValue}" />
+            <div class="alert-actions">
+                <button class="alert-cancel-btn">${cancelText}</button>
+                <button class="alert-confirm-btn">${confirmText}</button>
+            </div>
+        `;
+
+        const win = this.createWindow(title, content);
+        win.element.style.width = '350px';
+        win.element.style.height = 'auto';
+
+        const x = (window.innerWidth - 350) / 2;
+        const y = (window.innerHeight - 200) / 2;
+        win.element.style.left = `${x}px`;
+        win.element.style.top = `${y}px`;
+
+        const input = content.querySelector('.prompt-input');
+        const confirmBtn = content.querySelector('.alert-confirm-btn');
+        const cancelBtn = content.querySelector('.alert-cancel-btn');
+
+        setTimeout(() => input.focus(), 100);
+        input.select();
+
+        return new Promise((resolve) => {
+            const handleConfirm = () => {
+                const value = input.value;
+                this.closeWindow(win);
+                resolve(value);
+            };
+
+            confirmBtn.addEventListener('click', handleConfirm);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleConfirm();
+                if (e.key === 'Escape') {
+                    this.closeWindow(win);
+                    resolve(null);
+                }
+            });
+            cancelBtn.addEventListener('click', () => {
+                this.closeWindow(win);
+                resolve(null);
+            });
+        });
+    }
 }

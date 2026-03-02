@@ -242,6 +242,27 @@
     transform: translateY(0);
 }
 
+.prompt-container {
+    gap: 15px;
+}
+
+.prompt-input {
+    width: 90%;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(238, 241, 219, 0.4);
+    color: var(--bios-text);
+    padding: 10px;
+    font-family: var(--bios-font);
+    font-size: 1rem;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.prompt-input:focus {
+    border-color: var(--bios-text);
+}
+
 /* Sailor App */
 .sailor-window .window-content {
     overflow: hidden !important;

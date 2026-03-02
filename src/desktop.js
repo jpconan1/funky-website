@@ -3,9 +3,10 @@ import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
 import { PixelArt } from './pixel-art.js';
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp } from './supabase.js';
 import { Sailor } from './sailor.js';
 import { Synth } from './synth.js';
+import { Paint } from './paint.js';
 
 
 async function preloadAssets(paths) {
@@ -75,6 +76,7 @@ export async function initDesktop() {
     const wm = new WindowManager();
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
     const pixelArt = new PixelArt(wm, () => loadGuestbookMessages(true));
+    const paint = new Paint(wm, () => loadGuestbookMessages(true));
     const synth = new Synth(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
 
@@ -166,6 +168,7 @@ export async function initDesktop() {
 
     initContextMenu(desktop, {
         newTextFile: () => textEditor.openNewFile(),
+        newPaint: () => paint.openNewFile(),
         newPixelArt: () => pixelArt.openNewFile(),
         newSynth: () => synth.openNewFile()
     });
@@ -528,10 +531,18 @@ export async function initDesktop() {
         // 3. Image handling (Internal Viewer)
         if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
             console.log(`[DEBUG] -> Branch: Image Viewer`);
-            const encodedPath = encodePath(file.path);
+
+            let imgSrc;
+            if (file.isCloud) {
+                imgSrc = stripStamp(file.content);
+            } else {
+                const encodedPath = encodePath(file.path);
+                imgSrc = `./desktop/${encodedPath}`;
+            }
+
             const content = `
                 <div class="img-content">
-                    <img src="./desktop/${encodedPath}" alt="${file.name}" />
+                    <img src="${imgSrc}" alt="${file.name}" />
                 </div>
             `;
             wm.createWindow(file.name, content);
