@@ -355,8 +355,8 @@ const update_from_url_params = () => {
 		}
 	}
 
-	// Quick Undo Button
-	if (location.hash.match(/easy-undo/i)) {
+	// Quick Undo Button — JP-OS: on by default
+	if (!location.hash.match(/easy-undo=false/i)) {
 		if (!$("body").hasClass("easy-undo-mode")) {
 			$("body").addClass("easy-undo-mode");
 			$G.triggerHandler("easy-undo-mode-toggled");
@@ -631,7 +631,7 @@ if ($news_indicator.text().includes("Bubblegum")) {
 // #endregion
 
 $status_text.default = () => {
-	$status_text.html('Based on&nbsp;<a href="https://jspaint.app" target="_blank">JS Paint</a>&nbsp;by Isaiah Odhner. MIT license');
+	$status_text.html('Based on&nbsp;<a href="https://jspaint.app" target="_blank" style="color:#ea461d;">JS Paint</a>&nbsp;by Isaiah Odhner. MIT license');
 };
 $status_text.default();
 

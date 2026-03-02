@@ -1,4 +1,4 @@
-import { saveMessage, MEDIA_STAMP } from './supabase.js';
+import { saveMessage, setWallpaper, MEDIA_STAMP } from './supabase.js';
 
 export class Paint {
     constructor(windowManager, onSaveSuccess = null) {
@@ -78,8 +78,10 @@ export class Paint {
 
         const title = file ? `Viewing: ${file.name}` : 'JP Paint (New)';
         const win = this.wm.createWindow(title, content);
-        win.element.style.width = '800px';
-        win.element.style.height = '600px';
+        win.element.style.width = '750px';
+        win.element.style.height = '555px';
+        // Open 30px higher than the default position
+        win.element.style.top = `${parseInt(win.element.style.top) - 30}px`;
 
         // Setup the Bridge and Save Button
         if (isNew) {
@@ -237,13 +239,103 @@ export class Paint {
                     }
                 };
 
-                // Optional: Override setWallpaper to do something cool in JP-OS
+                // JP-OS: "Set as Wallpaper" — opens a dialog to name it, sign it, and save it
                 childWindow.systemHooks.setWallpaperCentered = (canvas) => {
                     const dataUrl = canvas.toDataURL('image/png');
-                    document.body.style.backgroundImage = `url(${dataUrl})`;
-                    document.body.style.backgroundSize = 'cover';
-                    document.body.style.backgroundPosition = 'center';
-                    self.wm.alert("Wallpaper updated!", "System");
+
+                    // Build the dialog window
+                    const dialogContent = document.createElement('div');
+                    dialogContent.style.cssText = 'display:flex;flex-direction:column;gap:14px;padding:16px;';
+                    dialogContent.innerHTML = `
+                        <p style="margin:0;font-family:var(--bios-font);color:var(--bios-text);font-size:12px;line-height:1.6;">
+                            This will set your drawing as the wallpaper for <strong>everyone</strong> who visits the site.
+                            A copy is saved to the desktop so visitors can bin it later.
+                        </p>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <input type="text" id="wp-filename" placeholder="wallpaper.png" class="editor-filename-input" style="width:100%;box-sizing:border-box;" />
+                            <input type="text" id="wp-from" placeholder="From:" class="editor-filename-input" style="width:100%;box-sizing:border-box;" />
+                        </div>
+                        <div class="privacy-notice">
+                            <input type="checkbox" id="wp-privacy" />
+                            <label for="wp-privacy">Public Artwork: <a href="#" id="wp-privacy-link">Privacy Policy</a></label>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button id="wp-submit" class="editor-save-btn">Set as Global Wallpaper</button>
+                            <button id="wp-cancel" class="editor-save-btn" style="background:rgba(255,255,255,0.12);flex-shrink:0;">Cancel</button>
+                        </div>
+                        <div id="wp-status" class="editor-status" style="min-height:1.2em;">Ready</div>
+                    `;
+
+                    const dialogWin = self.wm.createWindow('Set as Wallpaper', dialogContent);
+                    dialogWin.element.style.width = '400px';
+
+                    const statusEl = dialogContent.querySelector('#wp-status');
+                    const setWorking = (msg) => { statusEl.textContent = msg; statusEl.style.color = ''; };
+                    const setError = (msg) => { statusEl.textContent = msg; statusEl.style.color = '#ff4444'; };
+                    const setOk = (msg) => { statusEl.textContent = msg; statusEl.style.color = '#44ff44'; };
+
+                    // Privacy policy link
+                    dialogContent.querySelector('#wp-privacy-link').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        self.wm.createWindow('Privacy Policy', `
+                            <div class="privacy-policy-content">
+                                <h2>Privacy Policy</h2>
+                                <p>This website allows you to post public messages and pictures.</p>
+                                <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
+                                <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information.</p>
+                                <p><strong>Removing your information:</strong> Eventually items go in the bin. If you need something removed urgently, email jeanpaulconan at gmail dot com.</p>
+                            </div>
+                        `);
+                    });
+
+                    // Cancel
+                    dialogContent.querySelector('#wp-cancel').addEventListener('click', () => {
+                        self.wm.closeWindow(dialogWin);
+                    });
+
+                    // Submit
+                    dialogContent.querySelector('#wp-submit').addEventListener('click', async () => {
+                        const privacyCheckbox = dialogContent.querySelector('#wp-privacy');
+                        if (!privacyCheckbox.checked) {
+                            setError('Please agree to the Privacy Policy.');
+                            return;
+                        }
+
+                        let fileName = dialogContent.querySelector('#wp-filename').value.trim();
+                        if (!fileName) {
+                            setError('Please enter a filename for the wallpaper.');
+                            return;
+                        }
+                        if (!fileName.toLowerCase().endsWith('.png')) fileName += '.png';
+
+                        const fromRaw = dialogContent.querySelector('#wp-from').value.trim();
+                        const fromName = fromRaw || 'a mysterious stranger';
+
+                        setWorking('Saving to cloud...');
+                        try {
+                            // 1. Save image as a real cloud file (makes it binneable)
+                            const saved = await saveMessage(fileName, MEDIA_STAMP + dataUrl, { fromName });
+                            const messageId = saved && saved[0] ? saved[0].id : null;
+
+                            // 2. Apply wallpaper locally for instant feedback
+                            applyWallpaperToDesktop(dataUrl);
+
+                            // 3. Persist to site_settings with the source message ID
+                            //    so binning that cloud icon later auto-clears the wallpaper
+                            setWorking('Setting wallpaper...');
+                            await setWallpaper(dataUrl, messageId);
+
+                            setOk(`Wallpaper set! Signed: ${fromName}`);
+                            setTimeout(() => {
+                                self.wm.closeWindow(dialogWin);
+                                // Refresh desktop so the wallpaper icon appears
+                                if (self.onSaveSuccess) self.onSaveSuccess();
+                            }, 1400);
+                        } catch (err) {
+                            console.error('Failed to set wallpaper:', err);
+                            setError('Error: ' + err.message);
+                        }
+                    });
                 };
 
             } catch (e) {
@@ -254,5 +346,25 @@ export class Paint {
 
     openNewFile() {
         return this.open();
+    }
+}
+
+/**
+ * Apply (or clear) the wallpaper on the desktop element.
+ * Pass null/undefined to clear the wallpaper.
+ * Exported so desktop.js can reuse this on boot + realtime updates.
+ */
+export function applyWallpaperToDesktop(dataUrl) {
+    const desktop = document.querySelector('#desktop') || document.body;
+    if (dataUrl) {
+        desktop.style.backgroundImage = `url(${dataUrl})`;
+        desktop.style.backgroundSize = 'cover';
+        desktop.style.backgroundPosition = 'center';
+        desktop.style.backgroundRepeat = 'no-repeat';
+    } else {
+        desktop.style.backgroundImage = '';
+        desktop.style.backgroundSize = '';
+        desktop.style.backgroundPosition = '';
+        desktop.style.backgroundRepeat = '';
     }
 }

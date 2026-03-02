@@ -14,10 +14,7 @@ export function initContextMenu(desktopElement, actions) {
             <span class="menu-icon">🖌️</span>
             <span>New drawing (Paint)...</span>
         </div>
-        <div class="context-menu-item" id="menu-new-pixel-art">
-            <span class="menu-icon">🎨</span>
-            <span>New pixel art...</span>
-        </div>
+
         <div class="context-menu-item" id="menu-new-synth">
             <span class="menu-icon">🎹</span>
             <span>New song (broken)</span>
@@ -62,12 +59,6 @@ export function initContextMenu(desktopElement, actions) {
         e.stopPropagation();
         menu.style.display = 'none';
         if (actions.newPaint) actions.newPaint();
-    });
-
-    menu.querySelector('#menu-new-pixel-art').addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.style.display = 'none';
-        if (actions.newPixelArt) actions.newPixelArt();
     });
 
     menu.querySelector('#menu-new-synth').addEventListener('click', (e) => {

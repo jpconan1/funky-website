@@ -22,7 +22,9 @@ export function stripStamp(content) {
     return content;
 }
 
-export async function saveMessage(fileName, content) {
+export async function saveMessage(fileName, content, options = {}) {
+    const { fromName } = options;
+
     if (!supabase) {
         throw new Error('Supabase is not initialized. Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your .env file and restart your dev server.');
     }
@@ -59,6 +61,11 @@ export async function saveMessage(fileName, content) {
     const sanitizedContent = isImage ? content : DOMPurify.sanitize(content);
     const sanitizedFileName = DOMPurify.sanitize(fileName);
 
+    // Sanitize and cap the from_name (max 100 chars)
+    const sanitizedFromName = fromName
+        ? DOMPurify.sanitize(String(fromName)).trim().substring(0, 100) || null
+        : null;
+
     // Basic Validation: If it's a .draw file, it MUST be an image
     if (sanitizedFileName.toLowerCase().endsWith('.draw') && !isImage) {
         throw new Error('Security: .draw files must be valid image data.');
@@ -69,9 +76,11 @@ export async function saveMessage(fileName, content) {
         .insert([
             {
                 filename: sanitizedFileName,
-                content: sanitizedContent
+                content: sanitizedContent,
+                ...(sanitizedFromName ? { from_name: sanitizedFromName } : {})
             }
-        ]);
+        ])
+        .select(); // Return the inserted row so callers can get the ID
 
     if (error) throw error;
     return data;
@@ -163,6 +172,71 @@ export async function getMessages() {
     }
     return data;
 }
+
+// ============================================================
+// SITE SETTINGS (wallpaper, future global state)
+// ============================================================
+
+export async function getSetting(key) {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+        .from('site_settings')
+        .select('value, metadata')
+        .eq('key', key)
+        .maybeSingle();
+    if (error) { console.error('getSetting error:', error); return null; }
+    return data;
+}
+
+export async function setSetting(key, value, metadata = {}) {
+    if (!supabase) return;
+    const { error } = await supabase.rpc('set_site_setting', {
+        p_key: key,
+        p_value: value,
+        p_metadata: metadata
+    });
+    if (error) throw error;
+}
+
+export async function clearSetting(key) {
+    if (!supabase) return;
+    const { error } = await supabase.rpc('clear_site_setting', { p_key: key });
+    if (error) throw error;
+}
+
+/**
+ * Subscribe to realtime changes for a specific setting key.
+ * @param {string} key - The setting key to watch (e.g. 'wallpaper')
+ * @param {function} callback - Called with { value, metadata } whenever the row changes
+ * @returns {object} Supabase channel - call .unsubscribe() to clean up
+ */
+export function subscribeToSetting(key, callback) {
+    if (!supabase) return null;
+    const channel = supabase
+        .channel(`site_settings:${key}`)
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'site_settings',
+                filter: `key=eq.${key}`
+            },
+            (payload) => {
+                const row = payload.new || {};
+                callback({ value: row.value ?? null, metadata: row.metadata ?? {} });
+            }
+        )
+        .subscribe();
+    return channel;
+}
+
+// Wallpaper convenience wrappers
+export const getWallpaper = () => getSetting('wallpaper');
+export const setWallpaper = (dataUrl, sourceMessageId = null) =>
+    setSetting('wallpaper', dataUrl, sourceMessageId ? { source_message_id: sourceMessageId } : {});
+export const clearWallpaper = () => clearSetting('wallpaper');
+export const subscribeToWallpaper = (callback) => subscribeToSetting('wallpaper', callback);
 
 export async function getBinnedMessages() {
     if (!supabase) return [];

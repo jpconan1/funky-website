@@ -2,11 +2,12 @@ import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
-import { PixelArt } from './pixel-art.js';
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp } from './supabase.js';
+
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper } from './supabase.js';
 import { Sailor } from './sailor.js';
 import { Synth } from './synth.js';
 import { Paint } from './paint.js';
+import { applyWallpaperToDesktop } from './paint.js';
 
 
 async function preloadAssets(paths) {
@@ -75,7 +76,7 @@ export async function initDesktop() {
 
     const wm = new WindowManager();
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
-    const pixelArt = new PixelArt(wm, () => loadGuestbookMessages(true));
+
     const paint = new Paint(wm, () => loadGuestbookMessages(true));
     const synth = new Synth(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
@@ -169,7 +170,6 @@ export async function initDesktop() {
     initContextMenu(desktop, {
         newTextFile: () => textEditor.openNewFile(),
         newPaint: () => paint.openNewFile(),
-        newPixelArt: () => pixelArt.openNewFile(),
         newSynth: () => synth.openNewFile()
     });
 
@@ -406,6 +406,14 @@ export async function initDesktop() {
         try {
             await binMessage(file.id);
             console.log(`Binned: ${file.name}`);
+
+            // If this icon was the wallpaper source, clear the global wallpaper
+            const current = await getWallpaper();
+            if (current && current.metadata && current.metadata.source_message_id === file.id) {
+                console.log('[Wallpaper] Source icon binned — clearing global wallpaper');
+                await clearWallpaper();
+                // applyWallpaperToDesktop(null) will fire via the realtime subscription
+            }
         } catch (err) {
             console.error("Failed to bin file:", err);
         }
@@ -522,14 +530,8 @@ export async function initDesktop() {
             return sailor.openDirectory(file);
         }
 
-        // 2. Pixel Art handling
-        if (ext === '.draw') {
-            console.log(`[DEBUG] -> Branch: Pixel Art`);
-            return pixelArt.open(file);
-        }
-
-        // 3. Image handling (Internal Viewer)
-        if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
+        // 2. Image handling (Internal Viewer) — .draw cloud files are DataURL images
+        if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.draw') {
             console.log(`[DEBUG] -> Branch: Image Viewer`);
 
             let imgSrc;
@@ -855,6 +857,23 @@ export async function initDesktop() {
     // Play startup chime
     const chime = new Audio('/chime.wav');
     chime.play().catch(e => console.log('Startup chime blocked:', e));
+
+    // --- Global Wallpaper: load current + subscribe to realtime changes ---
+    try {
+        const wallpaperRow = await getWallpaper();
+        if (wallpaperRow && wallpaperRow.value) {
+            applyWallpaperToDesktop(wallpaperRow.value);
+            console.log('[Wallpaper] Loaded from Supabase');
+        }
+    } catch (err) {
+        console.warn('[Wallpaper] Could not load wallpaper:', err);
+    }
+
+    // Subscribe so wallpaper changes / clears propagate live to all visitors
+    subscribeToWallpaper(({ value }) => {
+        console.log('[Wallpaper] Realtime update received');
+        applyWallpaperToDesktop(value || null);
+    });
 
     // Show welcome alert
     wm.alert("Welcome to my website! Please take a look around. I don't have a guestbook, but you can right click the desktop and leave a note or draw a picture! It'll show up for everyone else! And if things get too cluttered, can you bin some old stuff? Thanks!");

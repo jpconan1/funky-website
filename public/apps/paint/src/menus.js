@@ -31,173 +31,9 @@ const looksLikeChrome = !!(window.chrome && (window.chrome.loadTimes || window.c
 /** @type {OSGUITopLevelMenus} */
 const menus = {
 	[localize("&File")]: [
-		{
-			label: localize("&New"),
-			...shortcut(window.is_electron_app ? "Ctrl+N" : "Ctrl+Alt+N"), // Ctrl+N opens a new browser window
-			speech_recognition: [
-				"new", "new file", "new document", "create new document", "create a new document", "start new document", "start a new document",
-			],
-			action: () => { file_new(); },
-			description: localize("Creates a new document."),
-		},
-		{
-			label: localize("&Open"),
-			...shortcut("Ctrl+O"),
-			speech_recognition: [
-				"open", "open document", "open file", "open an image file", "open a document", "open a file",
-				"load document", "load a document", "load an image file", "load an image",
-				"show file picker", "show file chooser", "show file browser", "show finder",
-				"browser for file", "browse for a file", "browse for an image", "browse for an image file",
-			],
-			action: () => { file_open(); },
-			description: localize("Opens an existing document."),
-		},
-		{
-			label: localize("&Save"),
-			...shortcut("Ctrl+S"),
-			speech_recognition: [
-				"save", "save document", "save file", "save image", "save picture", "save image file",
-				// "save a document", "save a file", "save an image", "save an image file", // too "save as"-like
-				"save the document", "save the file", "save the image", "save the image file",
 
-				"download", "download document", "download file", "download image", "download picture", "download image file",
-				"download the document", "download the file", "download the image", "download the image file",
-			],
-			action: () => { file_save(); },
-			description: localize("Saves the active document."),
-		},
-		{
-			label: localize("Save &As"),
-			// in mspaint, no shortcut is listed; it supports F12 (but in a browser that opens the dev tools)
-			// it doesn't support Ctrl+Shift+S but that's a good & common modern shortcut
-			...shortcut("Ctrl+Shift+S"),
-			speech_recognition: [
-				// this is ridiculous
-				// this would be really simple in JSGF format
-				"save as", "save as a new file", "save as a new picture", "save as a new image", "save a new file", "save new file",
-				"save a new document", "save a new image file", "save a new image", "save a new picture",
-				"save as a copy", "save a copy", "save as copy", "save under a new name", "save with a new name",
-				"save document as a copy", "save document copy", "save document as copy", "save document under a new name", "save document with a new name",
-				"save image as a copy", "save image copy", "save image as copy", "save image under a new name", "save image with a new name",
-				"save file as a copy", "save file copy", "save file as copy", "save file under a new name", "save file with a new name",
-				"save image file as a copy", "save image file copy", "save image file as copy", "save image file under a new name", "save image file with a new name",
-			],
-			action: () => { file_save_as(); },
-			description: localize("Saves the active document with a new name."),
-		},
-		MENU_DIVIDER,
-		{
-			label: localize("&Load From URL"),
-			// shortcut: "", // no shortcut: Ctrl+L is taken, and you can paste a URL with Ctrl+V, so it's not really needed
-			speech_recognition: [
-				"load from url",
-				"load from a url",
-				"load from address",
-				"load from an address",
-				"load from a web address",
-				// this is ridiculous
-				// this would be really simple in JSGF format
-				"load an image from a URL",
-				"load an image from an address",
-				"load an image from a web address",
-				"load image from a URL",
-				"load image from an address",
-				"load image from a web address",
-				"load an image from URL",
-				"load an image from address",
-				"load an image from web address",
-				"load image from URL",
-				"load image from address",
-				"load image from web address",
 
-				"load an picture from a URL",
-				"load an picture from an address",
-				"load an picture from a web address",
-				"load picture from a URL",
-				"load picture from an address",
-				"load picture from a web address",
-				"load an picture from URL",
-				"load an picture from address",
-				"load an picture from web address",
-				"load picture from URL",
-				"load picture from address",
-				"load picture from web address",
-			],
-			action: () => { file_load_from_url(); },
-			description: localize("Opens an image from the web."),
-		},
-		{
-			label: localize("&Upload To Imgur"),
-			speech_recognition: [
-				"upload to imgur", "upload image to imgur", "upload picture to imgur",
-			],
-			action: () => {
-				// include the selection in the saved image
-				deselect();
 
-				main_canvas.toBlob((blob) => {
-					sanity_check_blob(blob, () => {
-						show_imgur_uploader(blob);
-					});
-				});
-			},
-			description: localize("Uploads the active document to Imgur"),
-		},
-		MENU_DIVIDER,
-		{
-			label: localize("Manage Storage"),
-			speech_recognition: [
-				"manage storage", "show storage", "open storage window", "manage sessions", "show sessions", "show local sessions", "local sessions", "storage manager", "show storage manager", "open storage manager",
-				"show autosaves", "show saves", "show saved documents", "show saved files", "show saved pictures", "show saved images", "show local storage",
-				"autosaves", "autosave", "saved documents", "saved files", "saved pictures", "saved images", "local storage",
-			],
-			action: () => { manage_storage(); },
-			description: localize("Manages storage of previously created or opened pictures."),
-		},
-		MENU_DIVIDER,
-		{
-			label: localize("Print Pre&view"),
-			speech_recognition: [
-				"preview print", "print preview", "show print preview", "show preview of print",
-			],
-			action: () => {
-				file_print();
-			},
-			description: localize("Prints the active document and sets printing options."),
-			//description: localize("Displays full pages."),
-		},
-		{
-			label: localize("Page Se&tup"),
-			speech_recognition: [
-				"setup page for print", "setup page for printing", "set-up page for print", "set-up page for printing", "set up page for print", "set up page for printing",
-				"page setup", "printing setup", "page set-up", "printing set-up", "page set up", "printing set up",
-			],
-			action: () => {
-				file_print();
-			},
-			description: localize("Prints the active document and sets printing options."),
-			//description: localize("Changes the page layout."),
-		},
-		{
-			label: localize("&Print"),
-			...shortcut("Ctrl+P"), // relies on browser's print shortcut being Ctrl+P
-			speech_recognition: [
-				"print", "send to printer", "show print dialog",
-				"print page", "print image", "print picture", "print drawing",
-				"print out page", "print out image", "print out picture", "print out drawing",
-				"print out the page", "print out the image", "print out the picture", "print out the drawing",
-
-				"send page to printer", "send image to printer", "send picture to printer", "send drawing to printer",
-				"send page to the printer", "send image to the printer", "send picture to the printer", "send drawing to the printer",
-				"send the page to the printer", "send the image to the printer", "send the picture to the printer", "send the drawing to the printer",
-				"send the page to printer", "send the image to printer", "send the picture to printer", "send the drawing to printer",
-			],
-			action: () => {
-				file_print();
-			},
-			description: localize("Prints the active document and sets printing options."),
-		},
-		MENU_DIVIDER,
 		{
 			label: localize("Set As &Wallpaper (Tiled)"),
 			speech_recognition: [
@@ -689,92 +525,7 @@ const menus = {
 			description: localize("Makes the current selection either opaque or transparent."),
 		},
 	],
-	[localize("&Colors")]: [
-		{
-			label: `${localize("&Edit Colors")}...`,
-			speech_recognition: [
-				"edit colors", "edit color", "edit custom colors", "edit custom color",
-				"pick custom color", "choose custom color", "pick a custom color", "choose a custom color",
-				"edit last color", "create new color", "choose new color", "create a new color", "pick a new color",
-			],
-			action: () => {
-				show_edit_colors_window();
-			},
-			description: localize("Creates a new color."),
-		},
-		{
-			label: localize("&Get Colors"),
-			speech_recognition: [
-				"get colors", "load colors", "load color palette", "load palette", "load color palette file", "load palette file", "load list of colors",
-			],
-			action: async () => {
-				// JP-OS: Palette loading from local files is disabled.
-				show_error_message("JP-OS: Loading custom palettes from files is disabled.");
-				return;
-				// const { file } = await systemHooks.showOpenFileDialog({ formats: palette_formats });
-				// ...
-			},
-			description: localize("Uses a previously saved palette of colors."),
-		},
-		{
-			label: localize("&Save Colors"),
-			speech_recognition: [
-				"save colors", "save list of colors", "save color palette", "save palette", "save color palette file", "save palette file",
-			],
-			action: () => {
-				const ap = new AnyPalette.Palette();
-				ap.name = "JS Paint Saved Colors";
-				ap.numberOfColumns = 16; // 14?
-				for (const color of palette) {
-					const [r, g, b] = get_rgba_from_color(color);
-					ap.push(new AnyPalette.Color({
-						red: r / 255,
-						green: g / 255,
-						blue: b / 255,
-					}));
-				}
-				systemHooks.showSaveFileDialog({
-					dialogTitle: localize("Save Colors"),
-					defaultFileName: localize("untitled.pal"),
-					formats: palette_formats,
-					getBlob: (format_id) => {
-						const file_content = AnyPalette.writePalette(ap, AnyPalette.formats[format_id]);
-						const blob = new Blob([file_content], { type: "text/plain" });
-						return new Promise((resolve) => {
-							sanity_check_blob(blob, () => {
-								resolve(blob);
-							});
-						});
-					},
-				});
-			},
-			description: localize("Saves the current palette of colors to a file."),
-		},
-	],
-	[localize("&Help")]: [
-		{
-			label: localize("&Help Topics"),
-			speech_recognition: [
-				"help topics", "help me", "show help", "help", "show help window", "show help topics", "open help",
-				"help viewer", "show help viewer", "open help viewer",
-			],
-			action: () => { show_help(); },
-			description: localize("Displays Help for the current task or command."),
-		},
-		MENU_DIVIDER,
-		{
-			label: localize("&About Paint"),
-			speech_recognition: [
-				"about paint", "about js paint", "about jspaint", "show about window", "open about window", "about window",
-				"app info", "about the app", "app information", "information about the app",
-				"application info", "about the application", "application information", "information about the application",
-				"who made this", "who did this", "who did this xd",
-			],
-			action: () => { show_about_paint(); },
-			description: localize("Displays information about this application."),
-			//description: localize("Displays program information, version number, and copyright."),
-		},
-	],
+
 	[localize("E&xtras")]: [
 		{
 			emoji_icon: "⌚",
@@ -837,27 +588,6 @@ const menus = {
 		// 	},
 		// 	description: localize("Configures JS Paint."),
 		// }
-		{
-			emoji_icon: "🤪",
-			label: localize("&Draw Randomly"),
-			speech_recognition: [
-				"draw randomly", "draw pseudorandomly", "draw wildly", "make random art",
-			],
-			checkbox: {
-				toggle: () => {
-					if (simulatingGestures) {
-						stopSimulatingGestures();
-					} else {
-						simulateRandomGesturesPeriodically();
-					}
-				},
-				check: () => {
-					return simulatingGestures;
-				},
-			},
-			description: localize("Draws randomly with different tools."),
-		},
-		MENU_DIVIDER,
 		{
 			emoji_icon: "👥",
 			label: localize("&Multi-User"),
@@ -1174,37 +904,7 @@ const menus = {
 				}
 			)),
 		},
-		{
-			emoji_icon: "🧑",
-			// label: localize("Head Tracking"),
-			// label: localize("M&ove Cursor With Head"),
-			label: localize("Head Tracker"), // adding (Experimental) makes it too long, "WIP" or "Beta" feels too techy
-			speech_recognition: [
-				"head tracking", "head tracker", "move cursor with head", "control cursor with head", "mouse with head", "mouse cursor with head",
-				"face tracking", "face tracker", "move cursor with face", "control cursor with face", "mouse with face", "mouse cursor with face",
-				"head mouse", "face mouse", "facial mouse",
-				"head cursor", "face cursor", "facial cursor",
-				"head pointer", "face pointer", "facial pointer",
-				"head control", "face control", "facial control",
-				"head movement", "face movement", "facial movement",
-				"head motion", "face motion", "facial motion",
-				"head gestures", "face gestures", "facial gestures",
-				"tracky mouse", // name of the library
-			],
-			checkbox: {
-				toggle: () => {
-					if (/head-tracker/i.test(location.hash)) {
-						change_url_param("head-tracker", false);
-					} else {
-						change_url_param("head-tracker", true);
-					}
-				},
-				check: () => {
-					return /head-tracker/i.test(location.hash);
-				},
-			},
-			description: localize("Controls the cursor with head movements."),
-		},
+
 		// Later on I'll probably merge the Head Tracker and Dwell Clicker options into a Tracky Mouse option,
 		// or I'll create a preferences screen, where I'll be able to better clarify the relationships between features.
 		{
@@ -1306,81 +1006,8 @@ const menus = {
 			},
 			description: localize("Arranges the color box vertically."),
 		},
-		{
-			emoji_icon: "🎙️",
-			label: localize("&Speech Recognition"),
-			speech_recognition: [
-				"toggle speech recognition", "toggle speech recognition mode",
-				"disable speech recognition", "disable speech recognition mode", "turn off speech recognition", "turn off speech recognition mode", "leave speech recognition mode", "exit speech recognition mode",
-			],
-			checkbox: {
-				toggle: () => {
-					if (/speech-recognition-mode/i.test(location.hash)) {
-						change_url_param("speech-recognition-mode", false);
-					} else {
-						change_url_param("speech-recognition-mode", true);
-					}
-				},
-				check: () => {
-					return speech_recognition_active;
-				},
-			},
-			enabled: () => speech_recognition_available,
-			description: localize("Controls the application with voice commands."),
-		},
-		MENU_DIVIDER,
-		{
-			emoji_icon: "🗃️",
-			label: localize("Manage Storage"),
-			speech_recognition: [
-				// This is a duplicate menu item (for easy access), so it doesn't need speech recognition data here.
-			],
-			action: () => { manage_storage(); },
-			description: localize("Manages storage of previously created or opened pictures."),
-		},
-		MENU_DIVIDER,
-		{
-			emoji_icon: "📢",
-			label: localize("Project News"),
-			speech_recognition: [
-				"project news", "news about the project", "news about this project",
-				"app news", "news about the app", "news about this app",
-				"application news", "news about the application", "news about this application",
-				"what's new", "new features",
-				"show news", "show news update", "news update",
-			],
-			action: () => { show_news(); },
-			description: localize("Shows news about JS Paint."),
-		},
-		{
-			emoji_icon: "👾", // "👋",
-			label: localize("Discord"),
-			speech_recognition: [
-				"chat on discord", "discord server", "discord community", "join the discord", "join discord", "visit the discord", "visit discord", "discord chat",
-			],
-			action: () => {
-				window.open("https://discord.gg/jxQBK3k8tx");
-			},
-			description: localize("Joins the community on Discord."),
-		},
-		{
-			emoji_icon: "ℹ️",
-			label: localize("GitHub"),
-			speech_recognition: [
-				"repo on github", "project on github", "show the source code", "show source code",
-			],
-			action: () => { window.open("https://github.com/1j01/jspaint"); },
-			description: localize("Shows the project on GitHub."),
-		},
-		{
-			emoji_icon: "💵",
-			label: localize("Donate"),
-			speech_recognition: [
-				"donate", "make a monetary contribution",
-			],
-			action: () => { window.open("https://www.paypal.me/IsaiahOdhner"); },
-			description: localize("Supports the project."),
-		},
+
+
 	],
 };
 
