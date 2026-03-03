@@ -8,8 +8,14 @@
 }
 
 :root {
-    --bios-bg: #01301e;
-    --bios-text: #eef1db;
+    /* Color Palette */
+    --color-dark-green: #01301e;
+    --color-light-green: #2a5733;
+    --color-orange: #ea461D;
+    --color-creme: #eef1db;
+
+    --bios-bg: var(--color-dark-green);
+    --bios-text: var(--color-creme);
     --bios-font: 'IBM VGA', monospace;
     --desktop-font: 'Inter', system-ui, -apple-system, sans-serif;
 

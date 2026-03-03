@@ -47,7 +47,7 @@ export class Paint {
 
         content.appendChild(iframe);
 
-        // Footer for Privacy Policy (matches other apps)
+        // Footer for Privacy Policy + From field (matches other apps)
         if (isNew) {
             const footer = document.createElement('div');
             footer.className = 'editor-footer';
@@ -56,27 +56,27 @@ export class Paint {
                 <div class="privacy-notice">
                     <input type="checkbox" id="paint-privacy-agreement" />
                     <label for="paint-privacy-agreement">Public Artwork: <a href="#" id="view-paint-privacy">Privacy Policy</a></label>
+                    <input type="text" id="paint-from-name" placeholder="From: (optional)" class="editor-filename-input" style="margin-left: 10px; flex: 1; min-width: 0;" />
                 </div>
                 <div class="editor-status" id="paint-status">Ready</div>
             `;
             content.appendChild(footer);
 
             const privacyLink = footer.querySelector('#view-paint-privacy');
-            privacyLink.addEventListener('click', (e) => {
+            privacyLink.addEventListener('click', async (e) => {
                 e.preventDefault();
-                this.wm.createWindow('Privacy Policy', `
-                    <div class="privacy-policy-content">
-                        <h2>Privacy Policy</h2>
-                        <p>This website allows you to post public messages and pictures.</p>
-                        <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
-                        <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information.</p>
-                        <p><strong>Removing your information:</strong> Eventually items go in the bin. If you need something removed urgently, email jeanpaulconan at gmail dot com.</p>
-                    </div>
-                `);
+                try {
+                    const res = await fetch('./privacy-policy.txt');
+                    const text = await res.text();
+                    const lines = text.trim().split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+                    this.wm.createWindow('Privacy Policy', `<div class="privacy-policy-content">${lines}</div>`);
+                } catch {
+                    this.wm.createWindow('Privacy Policy', '<div class="privacy-policy-content"><p>Could not load Privacy Policy.</p></div>');
+                }
             });
         }
 
-        const title = file ? `Viewing: ${file.name}` : 'JP Paint (New)';
+        const title = file ? `Viewing: ${file.name}` : 'Paint (New)';
         const win = this.wm.createWindow(title, content);
         win.element.style.width = '750px';
         win.element.style.height = '555px';
@@ -87,6 +87,7 @@ export class Paint {
         if (isNew) {
             const saveBtn = content.querySelector('#paint-save-btn');
             const fileNameInput = content.querySelector('#paint-file-name');
+            const fromNameInput = content.querySelector('#paint-from-name');
             const privacyCheckbox = content.querySelector('#paint-privacy-agreement');
             const status = content.querySelector('#paint-status');
 
@@ -129,8 +130,11 @@ export class Paint {
                     let fileName = fileNameInput.value.trim() || 'drawing.png';
                     if (!fileName.toLowerCase().endsWith('.png')) fileName += '.png';
 
+                    const fromNameRaw = fromNameInput ? fromNameInput.value.trim() : '';
+                    const fromName = fromNameRaw || undefined;
+
                     status.textContent = 'Saving to Paper...';
-                    await saveMessage(fileName, body);
+                    await saveMessage(fileName, body, { fromName });
 
                     status.textContent = 'Saved to Cloud!';
                     status.style.color = '#44ff44';
@@ -275,17 +279,16 @@ export class Paint {
                     const setOk = (msg) => { statusEl.textContent = msg; statusEl.style.color = '#44ff44'; };
 
                     // Privacy policy link
-                    dialogContent.querySelector('#wp-privacy-link').addEventListener('click', (e) => {
+                    dialogContent.querySelector('#wp-privacy-link').addEventListener('click', async (e) => {
                         e.preventDefault();
-                        self.wm.createWindow('Privacy Policy', `
-                            <div class="privacy-policy-content">
-                                <h2>Privacy Policy</h2>
-                                <p>This website allows you to post public messages and pictures.</p>
-                                <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
-                                <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information.</p>
-                                <p><strong>Removing your information:</strong> Eventually items go in the bin. If you need something removed urgently, email jeanpaulconan at gmail dot com.</p>
-                            </div>
-                        `);
+                        try {
+                            const res = await fetch('./privacy-policy.txt');
+                            const text = await res.text();
+                            const lines = text.trim().split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+                            self.wm.createWindow('Privacy Policy', `<div class="privacy-policy-content">${lines}</div>`);
+                        } catch {
+                            self.wm.createWindow('Privacy Policy', '<div class="privacy-policy-content"><p>Could not load Privacy Policy.</p></div>');
+                        }
                     });
 
                     // Cancel

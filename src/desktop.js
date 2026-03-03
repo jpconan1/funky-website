@@ -2,11 +2,13 @@ import Matter from 'matter-js';
 import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
+import { requireAdmin, isAdminSession } from './admin-auth.js';
 
 import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper } from './supabase.js';
 import { Sailor } from './sailor.js';
 import { Synth } from './synth.js';
 import { Paint } from './paint.js';
+import { ChessApp } from './chess.js';
 import { applyWallpaperToDesktop } from './paint.js';
 
 
@@ -68,6 +70,7 @@ export async function initDesktop() {
         new URL('./assets/start-menu/portrait.jpg', import.meta.url).href,
         new URL('./assets/burger-joint.png', import.meta.url).href,
         new URL('./assets/working-draft-icon.png', import.meta.url).href,
+        new URL('./assets/chess-icon.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -80,6 +83,7 @@ export async function initDesktop() {
     const paint = new Paint(wm, () => loadGuestbookMessages(true));
     const synth = new Synth(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
+    const chess = new ChessApp(wm, () => loadGuestbookMessages(true));
 
     document.title = "Retro Desktop";
 
@@ -258,7 +262,22 @@ export async function initDesktop() {
     const runner = Runner.create();
     Runner.run(runner, engine);
 
-    const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
+    // Admin state — re-evaluated each time it's read so that logging in mid-session
+    // (via Ctrl+Shift+A) is reflected immediately without a page reload.
+    const getIsAdmin = () => isAdminSession();
+    let isAdmin = getIsAdmin();
+
+    // Secret shortcut: Ctrl+Shift+A → show admin login prompt
+    document.addEventListener('keydown', async (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+            e.preventDefault();
+            const granted = await requireAdmin();
+            if (granted) {
+                isAdmin = true;
+                console.log('[Admin] Session granted.');
+            }
+        }
+    });
 
     const iconPairs = [];
     const walls = [];
@@ -516,6 +535,11 @@ export async function initDesktop() {
             return;
         }
 
+        // Chess app — has no path or cloud content, handle before the path guard
+        if (file.type === 'chess') {
+            return chess.open();
+        }
+
         if (!file.path && !file.isCloud && file.type !== 'directory') {
             console.warn('File has no path and is not cloud/dir:', file);
             return;
@@ -542,9 +566,18 @@ export async function initDesktop() {
                 imgSrc = `./desktop/${encodedPath}`;
             }
 
+            const fromInfo = file.fromName ? `From: ${file.fromName}` : `From: <i>A mysterious stranger</i>`;
+
             const content = `
-                <div class="img-content">
-                    <img src="${imgSrc}" alt="${file.name}" />
+                <div class="img-content" style="display: flex; flex-direction: column; height: 100%;">
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <img src="${imgSrc}" alt="${file.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+                    </div>
+                    <div class="editor-footer" style="padding: 5px 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-family: var(--bios-font); font-size: 12px; color: var(--bios-text); opacity: 0.8;">
+                            ${fromInfo}
+                        </div>
+                    </div>
                 </div>
             `;
             wm.createWindow(file.name, content);
@@ -785,6 +818,14 @@ export async function initDesktop() {
             };
             const trainPos = getGridPosition(iconPairs.length);
             iconGrid.appendChild(createIcon(trainFile, trainPos.x, trainPos.y));
+
+            // Add Chess icon
+            const chessFile = {
+                name: 'Chess VS Admin',
+                type: 'chess'
+            };
+            const chessPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(chessFile, chessPos.x, chessPos.y));
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
@@ -830,6 +871,7 @@ export async function initDesktop() {
                     extension: msgExt,
                     type: 'cloud_file',
                     content: msg.content,
+                    fromName: msg.from_name,
                     isCloud: true
                 };
 
@@ -911,6 +953,9 @@ export function getIconSymbol(file) {
     }
     if (file.name === 'Yellow Deli article') {
         return `<div class="sprite" style="background-image: url('${new URL('./assets/working-draft-icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
+    if (file.type === 'chess') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/chess-icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
     }
     if (file.type === 'video') {
         return `<div class="sprite" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI0IiB5PSIxMiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0ZGMDAwMCIgLz48cGF0aCBkPSJNMjYgMjJMIDQyIDMyTDI2IDQyVjIyWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+'); --frames: 1;"></div>`;

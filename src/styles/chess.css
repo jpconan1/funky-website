@@ -1,0 +1,348 @@
+/* ========================================
+   Chess App — JP-OS
+   Colors: dark green / light green / orange / creme
+   ======================================== */
+
+.chess-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: var(--color-creme);
+    color: var(--color-dark-green);
+    height: 100%;
+    box-sizing: border-box;
+    font-family: var(--desktop-font);
+    overflow: hidden;
+}
+
+/* ---- Board + history side-by-side row ---- */
+.chess-main-row {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
+/* ---- Info bar ---- */
+.chess-info {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.chess-status-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chess-status-right {
+    text-align: right;
+}
+
+.chess-status-badge {
+    padding: 3px 7px;
+    border: 1px solid var(--color-dark-green);
+    font-size: 10px;
+    font-family: var(--desktop-font);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.chess-status-your-move {
+    background: var(--color-orange);
+    color: white;
+    border-color: var(--color-orange);
+    animation: chess-pulse 1s infinite alternate;
+}
+
+.chess-status-hidden {
+    display: none;
+}
+
+@keyframes chess-pulse {
+    from {
+        opacity: 0.75;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.03);
+    }
+}
+
+.chess-stats {
+    font-size: 11px;
+    padding: 8px;
+    text-align: center;
+    background: var(--color-dark-green);
+    color: var(--color-creme);
+    border: 2px solid var(--color-dark-green);
+    font-family: var(--desktop-font);
+    letter-spacing: 1px;
+}
+
+/* ---- Board ---- */
+/* ---- Board Area (Board + Labels) ---- */
+.chess-board-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.chess-player-label {
+    font-family: var(--desktop-font);
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--color-dark-green);
+    opacity: 0.8;
+}
+
+.chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 360px;
+    height: 360px;
+    flex-shrink: 0;
+    border: 3px solid var(--color-dark-green);
+    box-shadow: 4px 4px 0 var(--color-dark-green);
+    user-select: none;
+}
+
+/* ---- Squares ---- */
+.chess-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: filter 0.1s;
+}
+
+.chess-cell:hover {
+    filter: brightness(1.12);
+}
+
+.chess-cell.light {
+    background-color: var(--color-creme);
+}
+
+.chess-cell.dark {
+    background-color: var(--color-light-green);
+}
+
+.chess-cell.highlight {
+    background-color: rgba(234, 70, 29, 0.55) !important;
+    /* orange */
+}
+
+.chess-cell.last-move-from,
+.chess-cell.last-move-to {
+    box-shadow: inset 0 0 0 3px var(--color-orange);
+}
+
+/* ---- Pieces ---- */
+.chess-piece {
+    width: 88%;
+    height: 88%;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    line-height: 1;
+    transition: transform 0.15s ease;
+    pointer-events: none;
+}
+
+.chess-cell:hover .chess-piece {
+    transform: scale(1.12);
+}
+
+.chess-cell.highlight .chess-piece {
+    transform: scale(1.15);
+}
+
+/* ---- Controls ---- */
+.chess-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    font-size: 10px;
+}
+
+.chess-btn {
+    padding: 5px 14px;
+    background: var(--color-dark-green);
+    color: var(--color-creme);
+    border: 2px solid var(--color-dark-green);
+    cursor: pointer;
+    font-family: var(--desktop-font);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background 0.15s;
+}
+
+.chess-btn:hover {
+    background: var(--color-light-green);
+    border-color: var(--color-light-green);
+}
+
+.chess-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/* ---- Move History Panel ---- */
+/* ---- Right Panel (History + Stats) ---- */
+.chess-right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.chess-history-panel {
+    flex: 1;
+    min-width: 0;
+    border: 2px solid var(--color-dark-green);
+    background: color-mix(in srgb, var(--color-creme) 80%, var(--color-light-green) 20%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chess-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--color-dark-green);
+    flex-shrink: 0;
+    background: var(--color-dark-green);
+}
+
+.chess-history-title {
+    font-family: var(--desktop-font);
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--color-creme);
+    opacity: 0.9;
+}
+
+.chess-history-live-btn {
+    padding: 2px 8px !important;
+    font-size: 8px !important;
+    letter-spacing: 0.5px !important;
+    background: var(--color-orange) !important;
+    border-color: var(--color-orange) !important;
+    color: white !important;
+    line-height: 1.4;
+}
+
+.chess-history-live-btn:hover {
+    filter: brightness(1.15);
+}
+
+.chess-history-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-dark-green) transparent;
+}
+
+.chess-history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.chess-history-list::-webkit-scrollbar-thumb {
+    background: var(--color-dark-green);
+    border-radius: 2px;
+}
+
+.chess-history-empty {
+    font-size: 9px;
+    opacity: 0.45;
+    text-align: center;
+    padding: 8px 0;
+    font-family: var(--desktop-font);
+    letter-spacing: 1px;
+}
+
+.chess-history-row {
+    display: grid;
+    grid-template-columns: 24px 1fr 1fr;
+    gap: 2px;
+    align-items: center;
+    line-height: 1;
+}
+
+.chess-history-num {
+    font-family: var(--desktop-font);
+    font-size: 9px;
+    opacity: 0.45;
+    text-align: right;
+    padding-right: 4px;
+    user-select: none;
+}
+
+.chess-history-move {
+    font-family: var(--desktop-font);
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+    min-height: 16px;
+    letter-spacing: 0.5px;
+}
+
+.chess-history-move:hover {
+    background: color-mix(in srgb, var(--color-dark-green) 15%, transparent);
+}
+
+.chess-history-move.active {
+    background: var(--color-orange);
+    color: white;
+    font-weight: bold;
+}
+
+/* ---- Footer ---- */
+.chess-footer {
+    padding-top: 4px;
+    font-size: 10px;
+    opacity: 1;
+    text-align: left;
+    width: 100%;
+    flex-shrink: 0;
+}
+
+/* ---- Turn badge on desktop icon ---- */
+.turn-badge {
+    background: var(--color-orange) !important;
+    color: white !important;
+    animation: chess-pulse 1s infinite alternate;
+}

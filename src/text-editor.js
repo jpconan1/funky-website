@@ -27,12 +27,19 @@ export class TextEditor {
 
         const bodyContent = file.content || 'No content.';
 
+        const fromInfo = file.fromName ? `From: ${file.fromName}` : `From: <i>A mysterious stranger</i>`;
+
         content.innerHTML = `
             <div class="editor-toolbar" style="justify-content: space-between;">
                 <div class="editor-filename-display" style="font-family: var(--bios-font); color: var(--bios-text);">${file.name}</div>
                 <div class="editor-status" style="opacity: 0.5;">Read Only</div>
             </div>
-            <div class="viewer-content-area">${bodyContent}</div>
+            <div class="viewer-content-area" style="flex: 1; overflow-y: auto;">${bodyContent}</div>
+            <div class="editor-footer" style="padding: 5px 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-family: var(--bios-font); font-size: 12px; color: var(--bios-text); opacity: 0.8;">
+                    ${fromInfo}
+                </div>
+            </div>
         `;
 
         return this.wm.createWindow(`Viewing: ${file.name}`, content);
@@ -74,6 +81,7 @@ export class TextEditor {
                 <div class="privacy-notice">
                     <input type="checkbox" id="privacy-agreement" />
                     <label for="privacy-agreement">Public Note: <a href="#" id="view-privacy">Privacy Policy</a></label>
+                    <input type="text" id="from-name" placeholder="From: (optional)" class="editor-filename-input" style="margin-left: 10px; flex: 1; min-width: 0;" />
                 </div>
                 <div class="char-count-container">
                     <span id="char-count">0</span>/5000
@@ -86,6 +94,7 @@ export class TextEditor {
         const editor = content.querySelector('#editor-content');
         const saveBtn = content.querySelector('#save-btn');
         const fileNameInput = content.querySelector('#file-name');
+        const fromNameInput = content.querySelector('#from-name');
         const status = content.querySelector('#editor-status');
         const privacyCheckbox = content.querySelector('#privacy-agreement');
         const viewPrivacyLink = content.querySelector('#view-privacy');
@@ -128,17 +137,16 @@ export class TextEditor {
             });
         });
 
-        viewPrivacyLink.addEventListener('click', (e) => {
+        viewPrivacyLink.addEventListener('click', async (e) => {
             e.preventDefault();
-            this.wm.createWindow('Privacy Policy', `
-                <div class="privacy-policy-content">
-                    <h2>Privacy Policy</h2>
-                    <p>This website allows you to post public messages and pictures.</p>
-                    <p><strong>What we collect:</strong> We collect the content of your message, the filename you provide, and the timestamp of your post.</p>
-                    <p><strong>Visibility:</strong> Your message will be visible to ALL visitors of this website. Do not post sensitive or personal information. Don't draw anything unsuitable for a general audience.</p>
-                    <p><strong>Removing your information:</strong> Once a message is saved, it cannot be edited. Eventually it will go in the bin, where eventually it will disappear, unless I like your message or picture and choose to manually save it and display it. If you'd like me to remove something urgently or remove something I've saved, email me at jeanpaulconan at gmail dot com and I will take your information down.</p>
-                </div>
-            `);
+            try {
+                const res = await fetch('./privacy-policy.txt');
+                const text = await res.text();
+                const lines = text.trim().split('\n').map(l => `<p>${l || '&nbsp;'}</p>`).join('');
+                this.wm.createWindow('Privacy Policy', `<div class="privacy-policy-content">${lines}</div>`);
+            } catch {
+                this.wm.createWindow('Privacy Policy', '<div class="privacy-policy-content"><p>Could not load Privacy Policy.</p></div>');
+            }
         });
 
         saveBtn.addEventListener('click', async () => {
@@ -167,8 +175,10 @@ export class TextEditor {
             status.textContent = 'Saving to Paper...';
             status.style.color = '#fff';
 
+            const fromName = fromNameInput ? fromNameInput.value.trim() : '';
+
             try {
-                await saveMessage(fileName, body);
+                await saveMessage(fileName, body, { fromName: fromName || undefined });
                 status.textContent = 'Saved to Cloud!';
                 status.style.color = '#44ff44';
 
