@@ -83,14 +83,22 @@ export class WindowManager {
         // Drag Handler
         InputManager.attach(header, {
             owner: 'window-drag',
+            capture: true,
             onDown: (e) => {
                 this.focusWindow(windowData);
-                // Return true to start tracking, but we only lock if we actually drag
+                // Pre-calculate drag offset to avoid "jumping" when dragging starts
+                const rect = windowData.element.getBoundingClientRect();
+                this.dragOffset = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
                 return true;
             },
             onDragStart: (e) => {
                 if (InputManager.lock('window-drag')) {
-                    this.startDragging(e, windowData);
+                    this.activeWindow = windowData;
+                    this.isDragging = true;
+                    windowData.element.classList.add('window-moving');
                 }
             },
             onDrag: (e) => {
@@ -107,6 +115,10 @@ export class WindowManager {
             this.focusWindow(windowData);
         }, { passive: true });
 
+        closeBtn.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+        });
+
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeWindow(windowData);
@@ -115,14 +127,24 @@ export class WindowManager {
         // Resize Handler
         InputManager.attach(resizeHandle, {
             owner: 'window-resize',
+            capture: true,
             onDown: (e) => {
                 e.stopPropagation();
                 this.focusWindow(windowData);
+
+                this.activeWindow = windowData;
+                this.resizeStart = {
+                    width: windowData.element.offsetWidth,
+                    height: windowData.element.offsetHeight,
+                    x: e.clientX,
+                    y: e.clientY
+                };
                 return true;
             },
             onDragStart: (e) => {
                 if (InputManager.lock('window-resize')) {
-                    this.startResizing(e, windowData);
+                    this.isResizing = true;
+                    windowData.element.classList.add('window-resizing');
                 }
             },
             onDrag: (e) => {

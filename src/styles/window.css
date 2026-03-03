@@ -2,17 +2,16 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    min-width: calc(200px * var(--ui-scale));
-    min-height: calc(150px * var(--ui-scale));
+    min-width: 200px;
+    min-height: 150px;
     background: rgba(1, 48, 30, 0.7);
     backdrop-filter: blur(12px) saturate(150%);
     -webkit-backdrop-filter: blur(12px) saturate(150%);
     border: 1px solid rgba(238, 241, 219, 0.3);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8),
         inset 0 0 0 1px rgba(238, 241, 219, 0.1);
-    border-radius: calc(8px * var(--ui-scale));
+    border-radius: 8px;
     overflow: hidden;
-
     transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     animation: window-spawn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -46,18 +45,17 @@
 }
 
 .window-header {
-    height: calc(36px * var(--ui-scale));
+    height: 36px;
     background: rgba(238, 241, 219, 0.05);
     border-bottom: 1px solid rgba(238, 241, 219, 0.1);
     display: flex;
     align-items: center;
-    padding: 0 calc(12px * var(--ui-scale));
+    padding: 0 12px;
     cursor: grab;
     user-select: none;
     flex-shrink: 0;
     touch-action: none;
 }
-
 
 .window-header:active {
     cursor: grabbing;
@@ -76,14 +74,13 @@
 }
 
 .window-close-btn {
-    width: calc(24px * var(--ui-scale));
-    height: calc(24px * var(--ui-scale));
+    width: 24px;
+    height: 24px;
     border: none;
     background: url('../assets/close.png') no-repeat center center;
     background-size: contain;
     cursor: pointer;
     transition: transform 0.1s;
-
     image-rendering: pixelated;
 }
 
@@ -104,12 +101,11 @@
 
 .window-content {
     flex: 1;
-    padding: calc(15px * var(--ui-scale));
+    padding: 15px;
     overflow: auto;
     color: var(--bios-text);
     background: rgba(0, 0, 0, 0.2);
 }
-
 
 .txt-content {
     font-family: var(--bios-font);
@@ -153,12 +149,11 @@
 
 .window-icon-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, calc(100px * var(--ui-scale)));
-    grid-auto-rows: calc(140px * var(--ui-scale));
-    gap: calc(15px * var(--ui-scale));
-    padding: calc(10px * var(--ui-scale));
+    grid-template-columns: repeat(auto-fill, 100px);
+    grid-auto-rows: 140px;
+    gap: 15px;
+    padding: 10px;
 }
-
 
 .window-icon-grid .icon {
     position: static;

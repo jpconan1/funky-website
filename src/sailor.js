@@ -210,6 +210,8 @@ export class Sailor {
 
             InputManager.attach(icon, {
                 owner: 'sailor-icon',
+                capture: true,
+                dragThreshold: 0,
                 onDown: (e) => {
                     const rect = container.getBoundingClientRect();
                     const x = e.clientX - rect.left;

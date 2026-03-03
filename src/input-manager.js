@@ -1,11 +1,3 @@
-/**
- * InputManager
- * 
- * A unified interaction service that normalizes pointer events into 
- * high-level gestures (tap, double tap, hold, drag) and provides
- * an "Interaction Lock" to prevent multiple systems from fighting
- * over the same input stream.
- */
 export class InputManager {
     static activeLock = null;
 
@@ -38,130 +30,156 @@ export class InputManager {
 
     /**
      * Utility to attach gesture handlers to an element.
-     * 
-     * handlers: {
-     *   owner: Object|String, // Optional: key for the locking system
-     *   onTap: (e) => {},
-     *   onDoubleTap: (e) => {},
-     *   onHold: (e) => {},
-     *   onDragStart: (e, { dx, dy }) => {},
-     *   onDrag: (e, { dx, dy }) => {},
-     *   onDragEnd: (e) => {},
-     *   onDown: (e) => {}
-     * }
      */
     static attach(element, handlers = {}) {
-        let startPos = { x: 0, y: 0 };
-        let startTime = 0;
-        let isDragging = false;
-        let holdTimer = null;
-        let clickCount = 0;
-        let clickTimer = null;
+        let state = {
+            pointerId: null,
+            startPos: { x: 0, y: 0 },
+            lastPos: { x: 0, y: 0 },
+            startTime: 0,
+            isDragging: false,
+            clickCount: 0,
+            clickTimer: null,
+            holdTimer: null
+        };
 
-        const DRAG_THRESHOLD = 5;
-        const HOLD_DURATION = 600; // Slightly longer than tap but responsive
-        const DOUBLE_TAP_DELAY = 320;
+        const DRAG_THRESHOLD = handlers.dragThreshold !== undefined ? handlers.dragThreshold : 8; // Slightly more forgiving
+        const HOLD_DURATION = 600;
+        const DOUBLE_TAP_DELAY = 300;
 
         const onPointerDown = (e) => {
-            // Only handle primary button (left click / touch)
-            // Note: right click (button 2) should still trigger contextmenu normally
-            if (e.button !== 0) return;
-
-            // If someone else has a lock, ignore this input
+            if (e.button !== 0 || e.defaultPrevented) return;
             if (this.isLocked(handlers.owner)) return;
 
-            startPos = { x: e.clientX, y: e.clientY };
-            startTime = Date.now();
-            isDragging = false;
+            // Clean up any previous state if it was somehow stuck
+            cleanupGlobal();
+
+            state.pointerId = e.pointerId;
+            state.startPos = { x: e.clientX, y: e.clientY };
+            state.lastPos = { x: e.clientX, y: e.clientY };
+            state.startTime = Date.now();
+            state.isDragging = false;
 
             if (handlers.onHold) {
-                holdTimer = setTimeout(() => {
-                    if (!isDragging) {
+                state.holdTimer = setTimeout(() => {
+                    if (!state.isDragging) {
                         handlers.onHold(e);
-                        // Once we hold-trigger, we often want to prevent a tap on release
-                        isDragging = true;
+                        state.isDragging = true;
                     }
                 }, HOLD_DURATION);
             }
 
             if (handlers.onDown) {
-                // If onDown returns false, it means the component rejected the start
-                if (handlers.onDown(e) === false) return;
+                if (handlers.onDown(e) === false) {
+                    state.pointerId = null;
+                    return;
+                }
             }
 
-            element.setPointerCapture(e.pointerId);
-            element.addEventListener('pointermove', onPointerMove);
-            element.addEventListener('pointerup', onPointerUp);
-            element.addEventListener('pointercancel', onPointerCancel);
+            window.addEventListener('pointermove', onMove);
+            window.addEventListener('pointerup', onUp);
+            window.addEventListener('pointercancel', onCancel);
+            // Catch capture loss which can break drags
+            element.addEventListener('pointercapturelost', onCancel, { once: true });
         };
 
-        const onPointerMove = (e) => {
-            const dx = e.clientX - startPos.x;
-            const dy = e.clientY - startPos.y;
+        const onMove = (e) => {
+            if (state.pointerId === null || e.pointerId !== state.pointerId) return;
+
+            const dx = e.clientX - state.startPos.x;
+            const dy = e.clientY - state.startPos.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            if (!isDragging && dist > DRAG_THRESHOLD) {
-                isDragging = true;
-                if (holdTimer) clearTimeout(holdTimer);
+            const deltaX = e.clientX - state.lastPos.x;
+            const deltaY = e.clientY - state.lastPos.y;
+            state.lastPos = { x: e.clientX, y: e.clientY };
+
+            if (!state.isDragging && dist > DRAG_THRESHOLD) {
+                state.isDragging = true;
+                if (state.holdTimer) clearTimeout(state.holdTimer);
+
+                // Acquire capture on the element being interacted with ONLY if requested.
+                // For physics-based dragging (like desktop icons), capture breaks event bubbling to the parent grid!
+                if (handlers.capture) {
+                    try {
+                        element.setPointerCapture(state.pointerId);
+                    } catch (err) { }
+                }
 
                 if (handlers.onDragStart) {
-                    handlers.onDragStart(e, { dx, dy });
+                    handlers.onDragStart(e, { dx, dy, deltaX, deltaY });
                 }
             }
 
-            if (isDragging && handlers.onDrag) {
-                handlers.onDrag(e, { dx, dy });
+            if (state.isDragging && handlers.onDrag) {
+                handlers.onDrag(e, { dx, dy, deltaX, deltaY });
             }
         };
 
-        const onPointerUp = (e) => {
-            cleanup();
+        const onUp = (e) => {
+            if (state.pointerId === null || e.pointerId !== state.pointerId) return;
 
-            if (holdTimer) clearTimeout(holdTimer);
+            const wasDragging = state.isDragging;
+            const pid = state.pointerId;
 
-            if (isDragging) {
+            cleanupGlobal();
+
+            if (wasDragging) {
+                try {
+                    element.releasePointerCapture(pid);
+                } catch (err) { }
                 if (handlers.onDragEnd) handlers.onDragEnd(e);
             } else {
-                // It's a candidate for a Tap or Double Tap
-                clickCount++;
-                if (clickCount === 1) {
-                    clickTimer = setTimeout(() => {
-                        if (clickCount === 1) {
-                            if (handlers.onTap) handlers.onTap(e);
-                        }
-                        clickCount = 0;
-                    }, DOUBLE_TAP_DELAY);
-                } else if (clickCount === 2) {
-                    if (clickTimer) clearTimeout(clickTimer);
-                    if (handlers.onDoubleTap) handlers.onDoubleTap(e);
-                    clickCount = 0;
+                // Potential TAP or DOUBLE TAP
+                state.clickCount++;
+
+                if (!handlers.onDoubleTap) {
+                    if (handlers.onTap) handlers.onTap(e);
+                    state.clickCount = 0;
+                } else {
+                    if (state.clickCount === 1) {
+                        state.clickTimer = setTimeout(() => {
+                            if (state.clickCount === 1) {
+                                if (handlers.onTap) handlers.onTap(e);
+                            }
+                            state.clickCount = 0;
+                        }, DOUBLE_TAP_DELAY);
+                    } else if (state.clickCount === 2) {
+                        if (state.clickTimer) clearTimeout(state.clickTimer);
+                        if (handlers.onDoubleTap) handlers.onDoubleTap(e);
+                        state.clickCount = 0;
+                    }
                 }
             }
         };
 
-        const onPointerCancel = () => {
-            cleanup();
-            if (holdTimer) clearTimeout(holdTimer);
-            if (clickTimer) clearTimeout(clickTimer);
-            if (isDragging && handlers.onDragEnd) handlers.onDragEnd();
-            isDragging = false;
-            clickCount = 0;
+        const onCancel = (e) => {
+            if (state.pointerId === null || (e && e.pointerId !== state.pointerId)) return;
+
+            const wasDragging = state.isDragging;
+            cleanupGlobal();
+
+            if (wasDragging && handlers.onDragEnd) handlers.onDragEnd();
+            state.isDragging = false;
+            state.clickCount = 0;
         };
 
-        const cleanup = () => {
-            element.removeEventListener('pointermove', onPointerMove);
-            element.removeEventListener('pointerup', onPointerUp);
-            element.removeEventListener('pointercancel', onPointerCancel);
+        const cleanupGlobal = () => {
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onCancel);
+            element.removeEventListener('pointercapturelost', onCancel);
+
+            if (state.holdTimer) clearTimeout(state.holdTimer);
+            state.pointerId = null;
         };
 
         element.addEventListener('pointerdown', onPointerDown);
 
-        // Return a detacher
         return () => {
             element.removeEventListener('pointerdown', onPointerDown);
-            cleanup();
-            if (holdTimer) clearTimeout(holdTimer);
-            if (clickTimer) clearTimeout(clickTimer);
+            cleanupGlobal();
+            if (state.clickTimer) clearTimeout(state.clickTimer);
         };
     }
 }

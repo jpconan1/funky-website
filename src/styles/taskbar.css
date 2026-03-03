@@ -3,28 +3,26 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: calc(45px * var(--ui-scale));
+    height: 45px;
     background-color: var(--bios-bg);
     border-top: 2px solid var(--bios-text);
     display: flex;
     align-items: center;
-    padding: 0 calc(10px * var(--ui-scale));
+    padding: 0 10px;
     box-sizing: border-box;
     z-index: var(--z-taskbar);
     color: var(--bios-text);
-    font-size: calc(1.2rem * var(--ui-scale));
+    font-size: 1.2rem;
 }
 
-
 .start-button {
-    width: calc(96px * var(--ui-scale));
-    height: calc(32px * var(--ui-scale));
+    width: 96px;
+    height: 32px;
     background-image: url('../assets/start-menu/start-idle.png');
     background-size: contain;
     background-repeat: no-repeat;
     cursor: pointer;
-    margin-right: calc(15px * var(--ui-scale));
-
+    margin-right: 15px;
     image-rendering: pixelated;
 }
 
@@ -39,7 +37,7 @@
 .clock {
     margin-left: auto;
     border-left: 2px solid var(--bios-text);
-    padding-left: calc(15px * var(--ui-scale));
+    padding-left: 15px;
     height: 100%;
     display: flex;
     align-items: center;
