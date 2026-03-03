@@ -1,21 +1,23 @@
 #start-menu {
     position: absolute;
-    bottom: 45px;
+    bottom: calc(45px * var(--ui-scale));
     left: 0;
     display: none;
     z-index: var(--z-start-menu);
     filter: drop-shadow(8px 8px 0px rgba(0, 0, 0, 0.6));
 
     border-style: solid;
-    border-width: 48px;
+    border-width: calc(48px * var(--ui-scale));
     border-image-source: url('../assets/start-menu/start-box.png');
     border-image-slice: 120 fill;
     border-image-repeat: stretch;
 
-    width: 550px;
+    width: calc(550px * var(--ui-scale));
+    max-width: 95vw;
     image-rendering: pixelated;
     pointer-events: auto;
 }
+
 
 #start-menu.visible {
     display: block;
@@ -32,15 +34,16 @@
 }
 
 .start-menu-welcome {
-    font-size: 5.5rem;
+    font-size: calc(5.5rem * var(--ui-scale));
     font-weight: 900;
     text-align: center;
     margin: 0;
     letter-spacing: -4px;
     line-height: 0.9;
     color: var(--bios-text);
-    margin-bottom: 10px;
+    margin-bottom: calc(10px * var(--ui-scale));
 }
+
 
 .start-menu-main {
     display: grid;
@@ -108,9 +111,11 @@
 
 .submenu {
     position: absolute;
-    top: -48px;
+    top: calc(-48px * var(--ui-scale));
     left: 100%;
-    width: 480px;
+    width: calc(480px * var(--ui-scale));
+    max-width: 85vw;
+
     display: none;
     z-index: var(--z-submenu);
     margin-left: 20px;
@@ -280,12 +285,13 @@
 }
 
 #context-menu {
-    min-width: 180px;
+    min-width: calc(180px * var(--ui-scale));
     background: rgba(1, 48, 30, 0.9);
     border: 1px solid rgba(238, 241, 219, 0.3);
-    padding: 5px 0;
+    padding: calc(5px * var(--ui-scale)) 0;
     border-radius: 4px;
     box-shadow: 4px 4px 15px rgba(0, 0, 0, 0.5);
+
     z-index: var(--z-context-menu);
     font-family: var(--desktop-font);
 }

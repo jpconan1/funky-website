@@ -9,13 +9,14 @@
 
 .editor-toolbar {
     display: flex;
-    gap: 5px;
+    gap: calc(5px * var(--ui-scale));
     align-items: center;
     background: rgba(238, 241, 219, 0.1);
-    padding: 8px;
+    padding: calc(8px * var(--ui-scale));
     border-radius: 4px;
     flex-wrap: wrap;
 }
+
 
 .editor-toolbar-group {
     display: flex;
@@ -33,12 +34,13 @@
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(238, 241, 219, 0.3);
     color: var(--bios-text);
-    padding: 2px 8px;
+    padding: calc(2px * var(--ui-scale)) calc(8px * var(--ui-scale));
     cursor: pointer;
     font-family: var(--bios-font);
-    font-size: 0.9rem;
+    font-size: calc(0.9rem * var(--ui-scale));
     border-radius: 2px;
 }
+
 
 .editor-btn:hover {
     background: rgba(238, 241, 219, 0.2);
@@ -108,14 +110,15 @@
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(238, 241, 219, 0.2);
     color: var(--bios-text);
-    padding: 15px;
+    padding: calc(15px * var(--ui-scale));
     font-family: var(--bios-font);
-    font-size: 1.1rem;
+    font-size: calc(1.1rem * var(--ui-scale));
     border-radius: 4px;
     outline: none;
     overflow-y: auto;
     line-height: 1.4;
 }
+
 
 .editor-content-area:focus {
     border-color: rgba(238, 241, 219, 0.5);

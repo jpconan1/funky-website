@@ -11,10 +11,11 @@ body {
 }
 
 #app {
-    padding: 2rem;
-    font-size: 1.5rem;
+    padding: calc(2rem * var(--ui-scale));
+    font-size: calc(1.5rem * var(--ui-scale));
     line-height: 1.2;
     flex: 1;
+
     position: relative;
     overflow-y: auto;
 }
@@ -64,8 +65,9 @@ body {
 .logo-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 2rem;
+    margin-bottom: calc(2rem * var(--ui-scale));
 }
+
 
 .energy-star-img {
     text-align: right;

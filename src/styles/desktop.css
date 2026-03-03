@@ -55,12 +55,13 @@
     padding: 10px;
     border: 1px solid transparent;
     user-select: none;
-    width: 100px;
-    height: 120px;
+    width: calc(100px * var(--ui-scale));
+    height: calc(120px * var(--ui-scale));
     box-sizing: border-box;
     text-align: center;
     touch-action: none;
 }
+
 
 .icon.selected {
     background-color: rgba(238, 241, 219, 0.1);
@@ -75,9 +76,10 @@
 }
 
 .icon-image {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 8px;
+    width: calc(64px * var(--ui-scale));
+    height: calc(64px * var(--ui-scale));
+    margin-bottom: calc(8px * var(--ui-scale));
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -130,7 +132,8 @@
 
 /* Generic Sprite System */
 .sprite {
-    --size: 64px;
+    --size: calc(64px * var(--ui-scale));
+
     --frames: 3;
     width: var(--size);
     height: var(--size);

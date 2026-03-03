@@ -12,6 +12,14 @@ import { Paint } from './paint.js';
 import { ChessApp } from './chess.js';
 import { applyWallpaperToDesktop } from './paint.js';
 
+const getUIScale = () => {
+    if (typeof window === 'undefined') return 1;
+    const root = document.documentElement;
+    const scale = getComputedStyle(root).getPropertyValue('--ui-scale');
+    return parseFloat(scale) || 1;
+};
+
+
 
 async function preloadAssets(paths) {
     const promises = paths.map(path => {
@@ -209,8 +217,9 @@ export async function initDesktop() {
 
             item.addEventListener('mouseenter', () => {
                 // Determine the taskbar edge
-                const taskbarHeight = 45;
-                const buffer = 10;
+                const scale = getUIScale();
+                const taskbarHeight = 45 * scale;
+                const buffer = 10 * scale;
                 const bottomLimit = window.innerHeight - taskbarHeight - buffer;
 
                 // Reset position to measure
@@ -224,9 +233,11 @@ export async function initDesktop() {
 
                 if (rect.bottom > bottomLimit) {
                     const diff = rect.bottom - bottomLimit;
-                    // Current CSS top is -48px. We subtract the difference to "climb" up.
-                    submenu.style.top = `calc(-48px - ${diff}px)`;
+                    // Current CSS top is now calc(-48px * var(--ui-scale)). 
+                    // We need to offset from that.
+                    submenu.style.top = `calc((-48px * ${scale}) - ${diff}px)`;
                 }
+
 
                 // Restore display/visibility so CSS transitions/hovers take over
                 submenu.style.display = '';
@@ -354,9 +365,11 @@ export async function initDesktop() {
         const width = iconGrid.clientWidth;
         const height = iconGrid.clientHeight;
         const margin = 200;
+        const scale = getUIScale();
 
         iconPairs.forEach(({ element, body, file }) => {
             const { x, y } = body.position;
+
 
             // OOB check - respawn if somehow escaped the thick walls
             if (x < -margin || x > width + margin || y < -margin || y > height + margin) {
@@ -372,22 +385,23 @@ export async function initDesktop() {
                 const dx = binBody.position.x - x;
                 const dy = binBody.position.y - y;
                 const distSq = dx * dx + dy * dy;
-                const suctionRadiusSq = 150 * 150;
+                const suctionRadiusSq = Math.pow(150 * scale, 2);
 
                 if (distSq < suctionRadiusSq) {
                     const dist = Math.sqrt(distSq);
-                    const forceMagnitude = (1 - dist / 150) * 0.005;
+                    const forceMagnitude = (1 - dist / (150 * scale)) * 0.005;
                     Matter.Body.applyForce(body, body.position, {
                         x: (dx / dist) * forceMagnitude,
                         y: (dy / dist) * forceMagnitude
                     });
 
                     // Overlap Detection -> Binning Sequence
-                    if (dist < 40 && !element.dataset.binning) {
+                    if (dist < 40 * scale && !element.dataset.binning) {
                         element.dataset.binning = "true";
                         startBinningSequence(element, body, file);
                     }
                 }
+
             }
 
             // Apply gravity to the bin icon
@@ -399,9 +413,10 @@ export async function initDesktop() {
             }
 
             // Subtract half width/height to center the element on the body
-            element.style.left = `${x - 50}px`;
-            element.style.top = `${y - 60}px`; // Icons are roughly 100x120
+            element.style.left = `${x - (50 * scale)}px`;
+            element.style.top = `${y - (60 * scale)}px`; // Icons are roughly 100x120
             element.style.transform = `rotate(${body.angle}rad) scale(${element.dataset.scale || 1})`;
+
         });
     });
 
@@ -474,12 +489,14 @@ export async function initDesktop() {
         `;
 
         // Physics Body
-        const width = 100;
-        const height = 120;
+        const scale = getUIScale();
+        const width = 100 * scale;
+        const height = 120 * scale;
 
         // Use provided position or fallback to random
         const x = initialX !== undefined ? initialX : (Math.random() * (iconGrid.clientWidth - width) + width / 2);
         const y = initialY !== undefined ? initialY : (Math.random() * (iconGrid.clientHeight - height) + height / 2);
+
 
         const body = Bodies.rectangle(x, y, width, height, {
             frictionAir: 0.1,
@@ -645,13 +662,15 @@ export async function initDesktop() {
             <div class="icon-label">The Bin</div>
         `;
 
-        const width = 100;
-        const height = 120;
-        const x = initialX !== undefined ? initialX : (iconGrid.clientWidth - 80);
+        const scale = getUIScale();
+        const width = 100 * scale;
+        const height = 120 * scale;
+        const x = initialX !== undefined ? initialX : (iconGrid.clientWidth - (80 * scale));
         // Start higher up if no initialY provided, so it falls on load
-        const y = initialY !== undefined ? initialY : 100;
+        const y = initialY !== undefined ? initialY : (100 * scale);
 
         binBody = Bodies.rectangle(x, y, width, height, {
+
             isStatic: false,
             isSensor: false,
             friction: 0.5,
@@ -757,20 +776,22 @@ export async function initDesktop() {
     }
 
     function getGridPosition(index) {
-        const colWidth = 110;
-        const rowHeight = 130;
-        const paddingX = 20;
-        const paddingY = 20;
+        const scale = getUIScale();
+        const colWidth = 110 * scale;
+        const rowHeight = 130 * scale;
+        const paddingX = 20 * scale;
+        const paddingY = 20 * scale;
         const cols = Math.max(1, Math.floor((iconGrid.clientWidth - paddingX * 2) / colWidth));
 
         const col = index % cols;
         const row = Math.floor(index / cols);
 
         return {
-            x: paddingX + col * colWidth + 50,
-            y: paddingY + row * rowHeight + 60
+            x: paddingX + col * colWidth + (50 * scale),
+            y: paddingY + row * rowHeight + (60 * scale)
         };
     }
+
 
     // Start loading icons immediately in background
     const loadIcons = (async () => {

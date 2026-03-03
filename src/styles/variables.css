@@ -26,4 +26,13 @@
     --z-start-menu: 2000;
     --z-submenu: 2500;
     --z-context-menu: 3000;
+
+    /* Scaling */
+    --ui-scale: 1;
+}
+
+@media screen and (max-width: 768px) {
+    :root {
+        --ui-scale: 1.4;
+    }
 }
