@@ -137,7 +137,8 @@
     z-index: -1;
 }
 
-.start-menu-item.has-submenu:hover .submenu {
+.start-menu-item.has-submenu:hover .submenu,
+.start-menu-item.has-submenu.mobile-open .submenu {
     display: block;
     animation: submenu-slide-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.1);
 }

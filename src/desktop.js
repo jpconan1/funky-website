@@ -3,6 +3,7 @@ import { WindowManager } from './window-manager.js';
 import { initContextMenu } from './context-menu.js';
 import { TextEditor } from './text-editor.js';
 import { requireAdmin, isAdminSession } from './admin-auth.js';
+import { InputManager } from './input-manager.js';
 
 import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper } from './supabase.js';
 import { Sailor } from './sailor.js';
@@ -45,7 +46,6 @@ async function preloadAssets(paths) {
 }
 
 export async function initDesktop() {
-    const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
     const app = document.querySelector('#app');
     const beat = 150;
 
@@ -238,6 +238,14 @@ export async function initDesktop() {
     setupSubmenuClamping();
 
     startMenu.addEventListener('click', (e) => {
+        const submenuItem = e.target.closest('.has-submenu');
+        if (submenuItem) {
+            // Toggle the submenu on click (for touch)
+            const wasOpen = submenuItem.classList.contains('mobile-open');
+            // Close others
+            document.querySelectorAll('.has-submenu.mobile-open').forEach(el => el.classList.remove('mobile-open'));
+            if (!wasOpen) submenuItem.classList.add('mobile-open');
+        }
         e.stopPropagation();
     });
 
@@ -442,13 +450,14 @@ export async function initDesktop() {
     setTimeout(updateWalls, 0); // Initial walls setup
 
     // Close menu and deselect icons when clicking elsewhere
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener('pointerdown', (e) => {
         if (!e.target.closest('.icon')) {
             document.querySelectorAll('.icon.selected').forEach(icon => icon.classList.remove('selected'));
         }
         if (!e.target.closest('.start-button') && !e.target.closest('#start-menu')) {
             startButton.classList.remove('active');
             startMenu.classList.remove('visible');
+            document.querySelectorAll('.has-submenu.mobile-open').forEach(el => el.classList.remove('mobile-open'));
         }
     });
 
@@ -489,23 +498,26 @@ export async function initDesktop() {
         Composite.add(engine.world, body);
         iconPairs.push({ element: icon, body, file });
 
-        icon.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (isTouchDevice) {
-                openFile(file);
-            } else {
-                // Deselect others
+        icon.body = body; // Store reference for events
+
+        InputManager.attach(icon, {
+            owner: 'desktop-icon',
+            onTap: (e) => {
+                // Deselect others and select this one
                 document.querySelectorAll('.icon.selected').forEach(el => {
                     if (el !== icon) el.classList.remove('selected');
                 });
                 icon.classList.add('selected');
-            }
-        });
-
-        icon.addEventListener('dblclick', async (e) => {
-            e.stopPropagation();
-            if (!isTouchDevice) {
+            },
+            onDoubleTap: (e) => {
                 openFile(file);
+            },
+            onDragStart: () => {
+                // If we're dragging an icon, lock the system
+                InputManager.lock('desktop-icon');
+            },
+            onDragEnd: () => {
+                InputManager.unlock('desktop-icon');
             }
         });
 
@@ -655,23 +667,23 @@ export async function initDesktop() {
         Composite.add(engine.world, binBody);
         iconPairs.push({ element: bin, body: binBody });
 
-        bin.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (isTouchDevice) {
-                openBinWindow();
-            } else {
-                // Deselect others
+        InputManager.attach(bin, {
+            owner: 'desktop-icon',
+            onTap: (e) => {
+                // Deselect others and select this one
                 document.querySelectorAll('.icon.selected').forEach(el => {
                     if (el !== bin) el.classList.remove('selected');
                 });
                 bin.classList.add('selected');
-            }
-        });
-
-        bin.addEventListener('dblclick', async (e) => {
-            e.stopPropagation();
-            if (!isTouchDevice) {
+            },
+            onDoubleTap: (e) => {
                 openBinWindow();
+            },
+            onDragStart: () => {
+                InputManager.lock('desktop-icon');
+            },
+            onDragEnd: () => {
+                InputManager.unlock('desktop-icon');
             }
         });
 

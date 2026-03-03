@@ -1,12 +1,12 @@
+import { InputManager } from './input-manager.js';
+
 export class WindowManager {
     constructor() {
         this.windows = [];
         this.highestZIndex = 100;
         this._desktop = null;
 
-        // Handle global pointer events for dragging and resizing (covers mouse and touch)
-        window.addEventListener('pointermove', (e) => this.handlePointerMove(e));
-        window.addEventListener('pointerup', () => this.handlePointerUp());
+        // No more global window listeners. InputManager handles this per-interaction.
 
         this.activeWindow = null;
         this.isDragging = false;
@@ -80,23 +80,58 @@ export class WindowManager {
         const closeBtn = win.querySelector('.window-close-btn');
         const resizeHandle = win.querySelector('.window-resize-handle');
 
-        header.addEventListener('pointerdown', (e) => {
-            this.focusWindow(windowData);
-            this.startDragging(e, windowData);
+        // Drag Handler
+        InputManager.attach(header, {
+            owner: 'window-drag',
+            onDown: (e) => {
+                this.focusWindow(windowData);
+                // Return true to start tracking, but we only lock if we actually drag
+                return true;
+            },
+            onDragStart: (e) => {
+                if (InputManager.lock('window-drag')) {
+                    this.startDragging(e, windowData);
+                }
+            },
+            onDrag: (e) => {
+                this.handlePointerMove(e);
+            },
+            onDragEnd: () => {
+                this.handlePointerUp();
+                InputManager.unlock('window-drag');
+            }
         });
 
-        win.addEventListener('pointerdown', () => {
+        // Focus Handler
+        win.addEventListener('pointerdown', (e) => {
             this.focusWindow(windowData);
-        });
+        }, { passive: true });
 
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.closeWindow(windowData);
         });
 
-        resizeHandle.addEventListener('pointerdown', (e) => {
-            e.stopPropagation();
-            this.startResizing(e, windowData);
+        // Resize Handler
+        InputManager.attach(resizeHandle, {
+            owner: 'window-resize',
+            onDown: (e) => {
+                e.stopPropagation();
+                this.focusWindow(windowData);
+                return true;
+            },
+            onDragStart: (e) => {
+                if (InputManager.lock('window-resize')) {
+                    this.startResizing(e, windowData);
+                }
+            },
+            onDrag: (e) => {
+                this.handlePointerMove(e);
+            },
+            onDragEnd: () => {
+                this.handlePointerUp();
+                InputManager.unlock('window-resize');
+            }
         });
 
         return windowData;

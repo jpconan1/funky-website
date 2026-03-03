@@ -1,5 +1,6 @@
 import Matter from 'matter-js';
 import { getIconSymbol, formatFileName } from './desktop.js';
+import { InputManager } from './input-manager.js';
 
 export class Sailor {
     constructor(wm) {
@@ -32,7 +33,6 @@ export class Sailor {
 
     initPhysics(container, file, win, canvas) {
         const { Engine, Runner, Bodies, Composite, Events, Body, Vector } = Matter;
-        const isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 
         const engine = Engine.create();
         engine.gravity.y = 0;
@@ -167,73 +167,22 @@ export class Sailor {
         let grabbedBody = null;
         let lastMousePos = { x: 0, y: 0 };
 
-        container.addEventListener('pointerdown', (e) => {
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            const iconElement = e.target.closest('.icon');
-            const bodies = iconPairs.map(p => p.body);
-            const clickedBodies = Matter.Query.point(bodies, { x, y });
-
-            if (clickedBodies.length > 0 || iconElement) {
-                const pair = iconElement
-                    ? iconPairs.find(p => p.element === iconElement)
-                    : iconPairs.find(p => p.body === clickedBodies[0]);
-
-                if (pair) {
-                    grabbedBody = pair.body;
-
-                    // Deselect others in this container
-                    container.querySelectorAll('.icon').forEach(el => el.classList.remove('selected'));
-                    pair.element.classList.add('selected');
-
-                    triggerRipple(x, y, 60);
-                }
-            } else {
+        InputManager.attach(container, {
+            owner: 'sailor-water',
+            onTap: (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
                 triggerRipple(x, y, 200);
                 this.createVisualRipple(container, x, y);
                 container.querySelectorAll('.icon').forEach(el => el.classList.remove('selected'));
+            },
+            onHold: (e) => {
+                const rect = container.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                triggerRipple(x, y, 400);
             }
-            lastMousePos = { x, y };
-        });
-
-        window.addEventListener('pointermove', (e) => {
-            if (!container.isConnected) return;
-            const rect = container.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-
-            if (grabbedBody) {
-                // Calculate simple velocity based on mouse delta
-                const vx = x - lastMousePos.x;
-                const vy = y - lastMousePos.y;
-
-                Body.setPosition(grabbedBody, { x, y });
-                // We apply a bit of the velocity to the body so it 'carries' momentum when released
-                Body.setVelocity(grabbedBody, { x: vx * 0.8, y: vy * 0.8 });
-
-                // Continuous wake
-                const dist = Math.sqrt(vx ** 2 + vy ** 2);
-                if (dist > 5) {
-                    triggerRipple(x, y, dist * 1.0); // Reduced from 1.5
-                }
-            }
-            lastMousePos = { x, y };
-        });
-
-        window.addEventListener('pointerup', () => {
-            if (grabbedBody) {
-                // Add a little extra kick on release if moving fast
-                const speed = grabbedBody.speed;
-                if (speed > 5) {
-                    Body.setVelocity(grabbedBody, {
-                        x: grabbedBody.velocity.x * 1.2,
-                        y: grabbedBody.velocity.y * 1.2
-                    });
-                }
-            }
-            grabbedBody = null;
         });
 
         // Create Icons
@@ -241,40 +190,76 @@ export class Sailor {
         contents.forEach((child) => {
             const icon = document.createElement('div');
             icon.className = 'icon sailor-icon';
-            icon.style.pointerEvents = 'auto';
             icon.innerHTML = `
                 <div class="icon-image">${getIconSymbol(child)}</div>
                 <div class="icon-label">${formatFileName(child.name)}</div>
             `;
             container.appendChild(icon);
 
-            icon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (isTouchDevice) {
-                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
-                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
-                }
-            });
-
-            icon.addEventListener('dblclick', (e) => {
-                e.stopPropagation();
-                if (!isTouchDevice) {
-                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
-                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
-                }
-            });
-
             const body = Bodies.rectangle(
-                Math.random() * container.clientWidth,
-                Math.random() * container.clientHeight,
+                Math.random() * (container.clientWidth || 400),
+                Math.random() * (container.clientHeight || 300),
                 70, 90,
                 {
-                    frictionAir: 0.01, // Extremely low air friction for high inertia
+                    frictionAir: 0.01,
                     restitution: 0.4,
                     inertia: Infinity,
-                    mass: 5 // Manually bumping mass to make them 'heavy'
+                    mass: 5
                 }
             );
+
+            InputManager.attach(icon, {
+                owner: 'sailor-icon',
+                onDown: (e) => {
+                    const rect = container.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    grabbedBody = body;
+                    lastMousePos = { x, y };
+
+                    container.querySelectorAll('.icon').forEach(el => el.classList.remove('selected'));
+                    icon.classList.add('selected');
+                    triggerRipple(x, y, 60);
+                    return true;
+                },
+                onTap: (e) => {
+                    // Handled by onDown focus, but we could add more here
+                },
+                onDoubleTap: (e) => {
+                    if (child.type === 'directory' || child.contents) this.openDirectory(child);
+                    else window.dispatchEvent(new CustomEvent('sailor-open-file', { detail: child }));
+                },
+                onDrag: (e) => {
+                    const rect = container.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+
+                    const vx = x - lastMousePos.x;
+                    const vy = y - lastMousePos.y;
+
+                    Body.setPosition(body, { x, y });
+                    Body.setVelocity(body, { x: vx * 0.8, y: vy * 0.8 });
+
+                    const dist = Math.sqrt(vx ** 2 + vy ** 2);
+                    if (dist > 5) {
+                        triggerRipple(x, y, dist * 1.0);
+                    }
+                    lastMousePos = { x, y };
+                },
+                onDragEnd: () => {
+                    if (grabbedBody) {
+                        const speed = grabbedBody.speed;
+                        if (speed > 5) {
+                            Body.setVelocity(grabbedBody, {
+                                x: grabbedBody.velocity.x * 1.2,
+                                y: grabbedBody.velocity.y * 1.2
+                            });
+                        }
+                    }
+                    grabbedBody = null;
+                }
+            });
 
             Body.setVelocity(body, {
                 x: (Math.random() - 0.5) * 2,

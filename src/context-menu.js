@@ -1,3 +1,5 @@
+import { InputManager } from './input-manager.js';
+
 export function initContextMenu(desktopElement, actions) {
     const menu = document.createElement('div');
     menu.id = 'context-menu';
@@ -22,28 +24,40 @@ export function initContextMenu(desktopElement, actions) {
     `;
 
     document.body.appendChild(menu);
-
     desktopElement.addEventListener('contextmenu', (e) => {
         // Prevent default only if clicking on desktop or icon-grid
         if (e.target.id === 'desktop' || e.target.id === 'icon-grid' || e.target.classList.contains('desktop-overlay')) {
             e.preventDefault();
-
-            menu.style.display = 'block';
-            menu.style.left = `${e.clientX}px`;
-            menu.style.top = `${e.clientY}px`;
-
-            // Adjust if out of bounds
-            const rect = menu.getBoundingClientRect();
-            if (rect.right > window.innerWidth) {
-                menu.style.left = `${window.innerWidth - rect.width - 5}px`;
-            }
-            if (rect.bottom > window.innerHeight) {
-                menu.style.top = `${window.innerHeight - rect.height - 5}px`;
-            }
+            showMenu(e.clientX, e.clientY);
         } else {
             menu.style.display = 'none';
         }
     });
+
+    // Mobile Hold support
+    InputManager.attach(desktopElement, {
+        onHold: (e) => {
+            // Only trigger if we're clicking the desktop itself, not a child icon
+            if (e.target.id === 'desktop' || e.target.id === 'icon-grid' || e.target.classList.contains('desktop-overlay')) {
+                showMenu(e.clientX, e.clientY);
+            }
+        }
+    });
+
+    function showMenu(x, y) {
+        menu.style.display = 'block';
+        menu.style.left = `${x}px`;
+        menu.style.top = `${y}px`;
+
+        // Adjust if out of bounds
+        const rect = menu.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+            menu.style.left = `${window.innerWidth - rect.width - 5}px`;
+        }
+        if (rect.bottom > window.innerHeight) {
+            menu.style.top = `${window.innerHeight - rect.height - 5}px`;
+        }
+    }
 
     document.addEventListener('click', () => {
         menu.style.display = 'none';
