@@ -1,11 +1,19 @@
 [
   {
-    "name": "Hall of fame",
-    "size": 128,
-    "modified": "2026-02-24T22:36:48.545Z",
+    "name": "Changelog.txt",
+    "size": 573,
+    "modified": "2026-03-04T01:15:10.312Z",
+    "extension": ".txt",
+    "type": "text",
+    "path": "Changelog.txt"
+  },
+  {
+    "name": "Hall of Fame",
+    "size": 160,
+    "modified": "2026-03-04T01:04:48.651Z",
     "extension": "",
     "type": "directory",
-    "path": "Hall of fame",
+    "path": "Hall of Fame",
     "contents": [
       {
         "name": "a lovely hike.png",
@@ -13,7 +21,15 @@
         "modified": "2026-02-24T22:31:23.046Z",
         "extension": ".png",
         "type": "image",
-        "path": "Hall of fame/a lovely hike.png"
+        "path": "Hall of Fame/a lovely hike.png"
+      },
+      {
+        "name": "drawing.png",
+        "size": 7310,
+        "modified": "2026-03-04T01:03:34.085Z",
+        "extension": ".png",
+        "type": "image",
+        "path": "Hall of Fame/drawing.png"
       },
       {
         "name": "hall-of-fame.txt",
@@ -21,17 +37,9 @@
         "modified": "2026-02-24T22:36:33.177Z",
         "extension": ".txt",
         "type": "text",
-        "path": "Hall of fame/hall-of-fame.txt"
+        "path": "Hall of Fame/hall-of-fame.txt"
       }
     ]
-  },
-  {
-    "name": "blog.txt",
-    "size": 201,
-    "modified": "2026-02-24T18:17:52.788Z",
-    "extension": ".txt",
-    "type": "text",
-    "path": "blog.txt"
   },
   {
     "name": "my_dog.jpg",
