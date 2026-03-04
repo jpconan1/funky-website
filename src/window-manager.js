@@ -86,23 +86,24 @@ export class WindowManager {
             capture: true,
             onDown: (e) => {
                 this.focusWindow(windowData);
-                // Pre-calculate drag offset to avoid "jumping" when dragging starts
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+                // rect is in screen space. e.clientX is in screen space.
                 const rect = windowData.element.getBoundingClientRect();
                 this.dragOffset = {
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
+                    x: (e.clientX - rect.left) / scale,
+                    y: (e.clientY - rect.top) / scale
                 };
                 return true;
             },
-            onDragStart: (e) => {
+            onDragStart: (e, coords) => {
                 if (InputManager.lock('window-drag')) {
                     this.activeWindow = windowData;
                     this.isDragging = true;
                     windowData.element.classList.add('window-moving');
                 }
             },
-            onDrag: (e) => {
-                this.handlePointerMove(e);
+            onDrag: (e, coords) => {
+                this.handlePointerMove(e, coords);
             },
             onDragEnd: () => {
                 this.handlePointerUp();
@@ -133,22 +134,23 @@ export class WindowManager {
                 this.focusWindow(windowData);
 
                 this.activeWindow = windowData;
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
                 this.resizeStart = {
                     width: windowData.element.offsetWidth,
                     height: windowData.element.offsetHeight,
-                    x: e.clientX,
-                    y: e.clientY
+                    x: e.clientX / scale,
+                    y: e.clientY / scale
                 };
                 return true;
             },
-            onDragStart: (e) => {
+            onDragStart: (e, coords) => {
                 if (InputManager.lock('window-resize')) {
                     this.isResizing = true;
                     windowData.element.classList.add('window-resizing');
                 }
             },
-            onDrag: (e) => {
-                this.handlePointerMove(e);
+            onDrag: (e, coords) => {
+                this.handlePointerMove(e, coords);
             },
             onDragEnd: () => {
                 this.handlePointerUp();
@@ -196,25 +198,27 @@ export class WindowManager {
         windowData.element.classList.add('window-resizing');
     }
 
-    handlePointerMove(e) {
+    handlePointerMove(e, coords) {
         if (!this.activeWindow) return;
 
         if (this.isDragging) {
-            let left = e.clientX - this.dragOffset.x;
-            let top = e.clientY - this.dragOffset.y;
+            let left = coords.x - this.dragOffset.x;
+            let top = coords.y - this.dragOffset.y;
 
             // Constrain to viewport (optional, but usually good)
             const padding = 10;
-            left = Math.max(padding, Math.min(left, window.innerWidth - this.activeWindow.element.offsetWidth - padding));
-            top = Math.max(padding, Math.min(top, window.innerHeight - this.activeWindow.element.offsetHeight - padding));
+            const desktopWidth = this.desktop.clientWidth;
+            const desktopHeight = this.desktop.clientHeight;
+            left = Math.max(padding, Math.min(left, desktopWidth - this.activeWindow.element.offsetWidth - padding));
+            top = Math.max(padding, Math.min(top, desktopHeight - this.activeWindow.element.offsetHeight - padding));
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
         }
 
         if (this.isResizing) {
-            const deltaX = e.clientX - this.resizeStart.x;
-            const deltaY = e.clientY - this.resizeStart.y;
+            const deltaX = coords.x - this.resizeStart.x;
+            const deltaY = coords.y - this.resizeStart.y;
 
             const newWidth = Math.max(200, this.resizeStart.width + deltaX);
             const newHeight = Math.max(150, this.resizeStart.height + deltaY);
@@ -252,8 +256,10 @@ export class WindowManager {
         win.element.style.minHeight = '140px';
 
         // Center the alert
-        const x = (window.innerWidth - 320) / 2;
-        const y = (window.innerHeight - 200) / 2;
+        const desktopWidth = this.desktop.clientWidth;
+        const desktopHeight = this.desktop.clientHeight;
+        const x = (desktopWidth - 320) / 2;
+        const y = (desktopHeight - 200) / 2;
         win.element.style.left = `${x}px`;
         win.element.style.top = `${y}px`;
 
@@ -297,8 +303,10 @@ export class WindowManager {
         win.element.style.minHeight = '140px';
 
         // Center the alert
-        const x = (window.innerWidth - 320) / 2;
-        const y = (window.innerHeight - 200) / 2;
+        const desktopWidth = this.desktop.clientWidth;
+        const desktopHeight = this.desktop.clientHeight;
+        const x = (desktopWidth - 320) / 2;
+        const y = (desktopHeight - 200) / 2;
         win.element.style.left = `${x}px`;
         win.element.style.top = `${y}px`;
 
@@ -345,8 +353,10 @@ export class WindowManager {
         win.element.style.width = '350px';
         win.element.style.height = 'auto';
 
-        const x = (window.innerWidth - 350) / 2;
-        const y = (window.innerHeight - 200) / 2;
+        const desktopWidth = this.desktop.clientWidth;
+        const desktopHeight = this.desktop.clientHeight;
+        const x = (desktopWidth - 350) / 2;
+        const y = (desktopHeight - 200) / 2;
         win.element.style.left = `${x}px`;
         win.element.style.top = `${y}px`;
 

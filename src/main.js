@@ -3,6 +3,8 @@ import bootConfig from './boot-config.json'
 import epaLogo from './assets/epa.png'
 
 const app = document.querySelector('#app')
+const savedScale = localStorage.getItem('ui-scale') || '1';
+document.documentElement.style.setProperty('--ui-scale', savedScale);
 
 function addLine(text = '') {
   const line = document.createElement('div')

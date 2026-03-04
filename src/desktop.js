@@ -10,6 +10,7 @@ import { Sailor } from './sailor.js';
 import { Synth } from './synth.js';
 import { Paint } from './paint.js';
 import { ChessApp } from './chess.js';
+import { Settings } from './settings.js';
 import { applyWallpaperToDesktop } from './paint.js';
 
 
@@ -71,6 +72,7 @@ export async function initDesktop() {
         new URL('./assets/burger-joint.png', import.meta.url).href,
         new URL('./assets/working-draft-icon.png', import.meta.url).href,
         new URL('./assets/chess-icon.png', import.meta.url).href,
+        new URL('./assets/settings.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -84,6 +86,7 @@ export async function initDesktop() {
     const synth = new Synth(wm, () => loadGuestbookMessages(true));
     const sailor = new Sailor(wm);
     const chess = new ChessApp(wm, () => loadGuestbookMessages(true));
+    const settings = new Settings(wm);
 
     document.title = "Retro Desktop";
 
@@ -209,9 +212,10 @@ export async function initDesktop() {
 
             item.addEventListener('mouseenter', () => {
                 // Determine the taskbar edge
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
                 const taskbarHeight = 45;
                 const buffer = 10;
-                const bottomLimit = window.innerHeight - taskbarHeight - buffer;
+                const bottomLimit = window.innerHeight - (taskbarHeight * scale) - (buffer * scale);
 
                 // Reset position to measure
                 submenu.style.top = '';
@@ -223,7 +227,7 @@ export async function initDesktop() {
                 const rect = submenu.getBoundingClientRect();
 
                 if (rect.bottom > bottomLimit) {
-                    const diff = rect.bottom - bottomLimit;
+                    const diff = (rect.bottom - bottomLimit) / scale;
                     // Current CSS top is -48px. We subtract the difference to "climb" up.
                     submenu.style.top = `calc(-48px - ${diff}px)`;
                 }
@@ -328,6 +332,16 @@ export async function initDesktop() {
 
     // Mouse constraints for dragging
     const mouse = Mouse.create(iconGrid);
+
+    // Scaling helper for Matter.js mouse
+    const updateMouseScale = () => {
+        const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+        Mouse.setScale(mouse, { x: 1 / scale, y: 1 / scale });
+    };
+
+    window.addEventListener('ui-scale-changed', updateMouseScale);
+    updateMouseScale(); // Init
+
     const mouseConstraint = MouseConstraint.create(engine, {
         mouse: mouse,
         constraint: {
@@ -552,6 +566,10 @@ export async function initDesktop() {
         // Chess app — has no path or cloud content, handle before the path guard
         if (file.type === 'chess') {
             return chess.open();
+        }
+
+        if (file.type === 'settings') {
+            return settings.open();
         }
 
         if (!file.path && !file.isCloud && file.type !== 'directory') {
@@ -799,6 +817,15 @@ export async function initDesktop() {
             const burgerPos = getGridPosition(iconPairs.length); // Place after binned icons and other files
             iconGrid.appendChild(createIcon(burgerFile, burgerPos.x, burgerPos.y));
 
+            // Add Settings icon
+            const settingsFile = {
+                name: 'Settings',
+                type: 'settings',
+                extension: '.settings' // dummy extension for icon matching if needed
+            };
+            const settingsPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(settingsFile, settingsPos.x, settingsPos.y));
+
             // Add Working Draft icon
             const draftFile = {
                 name: 'Yellow Deli article',
@@ -972,6 +999,9 @@ export function getIconSymbol(file) {
     }
     if (file.type === 'chess') {
         return `<div class="sprite" style="background-image: url('${new URL('./assets/chess-icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
+    if (file.type === 'settings') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/settings.png', import.meta.url).href}'); --frames: 1;"></div>`;
     }
     if (file.type === 'video') {
         return `<div class="sprite" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI0IiB5PSIxMiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0ZGMDAwMCIgLz48cGF0aCBkPSJNMjYgMjJMIDQyIDMyTDI2IDQyVjIyWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+'); --frames: 1;"></div>`;

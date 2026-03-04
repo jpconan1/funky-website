@@ -23,12 +23,13 @@ export function initContextMenu(desktopElement, actions) {
         </div>
     `;
 
-    document.body.appendChild(menu);
+    desktopElement.appendChild(menu);
     desktopElement.addEventListener('contextmenu', (e) => {
         // Prevent default only if clicking on desktop or icon-grid
         if (e.target.id === 'desktop' || e.target.id === 'icon-grid' || e.target.classList.contains('desktop-overlay')) {
             e.preventDefault();
-            showMenu(e.clientX, e.clientY);
+            const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+            showMenu(e.clientX / scale, e.clientY / scale);
         } else {
             menu.style.display = 'none';
         }
@@ -39,7 +40,8 @@ export function initContextMenu(desktopElement, actions) {
         onHold: (e) => {
             // Only trigger if we're clicking the desktop itself, not a child icon
             if (e.target.id === 'desktop' || e.target.id === 'icon-grid' || e.target.classList.contains('desktop-overlay')) {
-                showMenu(e.clientX, e.clientY);
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+                showMenu(e.clientX / scale, e.clientY / scale);
             }
         }
     });
@@ -49,13 +51,17 @@ export function initContextMenu(desktopElement, actions) {
         menu.style.left = `${x}px`;
         menu.style.top = `${y}px`;
 
+        const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+
         // Adjust if out of bounds
         const rect = menu.getBoundingClientRect();
         if (rect.right > window.innerWidth) {
-            menu.style.left = `${window.innerWidth - rect.width - 5}px`;
+            const diff = (rect.right - window.innerWidth) / scale;
+            menu.style.left = `${x - diff - 5}px`;
         }
         if (rect.bottom > window.innerHeight) {
-            menu.style.top = `${window.innerHeight - rect.height - 5}px`;
+            const diff = (rect.bottom - window.innerHeight) / scale;
+            menu.style.top = `${y - diff - 5}px`;
         }
     }
 

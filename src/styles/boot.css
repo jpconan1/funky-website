@@ -16,7 +16,13 @@ body {
     line-height: 1.2;
     flex: 1;
     position: relative;
-    overflow-y: auto;
+    overflow: auto;
+
+    /* Scaling Context */
+    transform: scale(var(--ui-scale));
+    transform-origin: 0 0;
+    width: calc(100% / var(--ui-scale)) !important;
+    height: calc(100% / var(--ui-scale)) !important;
 }
 
 /* CRT Scanline Effect */
@@ -32,6 +38,10 @@ body {
     z-index: 100;
     background-size: 100% 2px, 3px 100%;
     pointer-events: none;
+}
+
+body.crt-off #app::before {
+    display: none;
 }
 
 .line {

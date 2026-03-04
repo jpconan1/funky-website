@@ -1,0 +1,203 @@
+/* UI Components Styles */
+
+.ui-field {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ui-label {
+    font-family: var(--desktop-font);
+    font-size: 0.85rem;
+    color: var(--bios-text);
+    opacity: 0.95;
+    font-weight: 400;
+    /* Normal weight */
+}
+
+.ui-label-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ui-value-display {
+    font-family: var(--desktop-font);
+    font-size: 0.85rem;
+    color: var(--color-orange);
+    font-weight: 400;
+    /* Normal weight */
+}
+
+/* Dropdown */
+.ui-select {
+    background: rgba(238, 241, 219, 0.1);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 4px;
+    color: var(--bios-text);
+    padding: 8px 12px;
+    font-family: var(--desktop-font);
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.ui-select:hover {
+    background: rgba(238, 241, 219, 0.15);
+    border-color: rgba(238, 241, 219, 0.4);
+}
+
+.ui-select option {
+    background: var(--color-dark-green);
+    color: var(--bios-text);
+}
+
+/* Slider */
+.ui-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: rgba(238, 241, 219, 0.2);
+    border-radius: 2px;
+    outline: none;
+}
+
+.ui-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-orange);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
+    border: 2px solid var(--color-creme);
+}
+
+.ui-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--color-orange);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
+    border: 2px solid var(--color-creme);
+}
+
+/* Checkbox */
+.ui-checkbox-container {
+    flex-direction: row;
+    align-items: center;
+}
+
+.ui-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-orange);
+}
+
+/* Radio Group */
+.ui-radio-options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ui-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ui-radio {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--color-orange);
+}
+
+.ui-label-inline {
+    font-family: var(--desktop-font);
+    font-size: 0.85rem;
+    color: var(--bios-text);
+    cursor: pointer;
+    font-weight: 400;
+    /* Normal weight */
+}
+
+/* Text Field */
+.ui-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 4px;
+    color: var(--bios-text);
+    padding: 10px 12px;
+    font-family: var(--desktop-font);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ui-input:focus {
+    border-color: var(--color-orange);
+    box-shadow: 0 0 5px rgba(234, 70, 29, 0.3);
+}
+
+/* Button */
+.ui-button {
+    background: var(--bios-text);
+    color: var(--bios-bg);
+    border: 1px solid var(--bios-text);
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-family: var(--desktop-font);
+    font-weight: bold;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.ui-button:hover {
+    background: transparent;
+    color: var(--bios-text);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+    filter: none;
+}
+
+.ui-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Sections */
+.ui-section {
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(238, 241, 219, 0.15);
+    padding-bottom: 8px;
+}
+
+.ui-section:first-child {
+    margin-top: 0;
+}
+
+.ui-section-header {
+    font-family: var(--desktop-font);
+    font-size: 0.8rem;
+    color: var(--bios-text);
+    /* Changed from orange to creme */
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin: 0;
+    opacity: 1;
+    font-weight: 900;
+    /* Keep Inter Black */
+}

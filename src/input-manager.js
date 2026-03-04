@@ -54,9 +54,10 @@ export class InputManager {
             // Clean up any previous state if it was somehow stuck
             cleanupGlobal();
 
+            const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
             state.pointerId = e.pointerId;
-            state.startPos = { x: e.clientX, y: e.clientY };
-            state.lastPos = { x: e.clientX, y: e.clientY };
+            state.startPos = { x: e.clientX / scale, y: e.clientY / scale };
+            state.lastPos = { x: e.clientX / scale, y: e.clientY / scale };
             state.startTime = Date.now();
             state.isDragging = false;
 
@@ -86,13 +87,17 @@ export class InputManager {
         const onMove = (e) => {
             if (state.pointerId === null || e.pointerId !== state.pointerId) return;
 
-            const dx = e.clientX - state.startPos.x;
-            const dy = e.clientY - state.startPos.y;
+            const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+            const currentX = e.clientX / scale;
+            const currentY = e.clientY / scale;
+
+            const dx = currentX - state.startPos.x;
+            const dy = currentY - state.startPos.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
-            const deltaX = e.clientX - state.lastPos.x;
-            const deltaY = e.clientY - state.lastPos.y;
-            state.lastPos = { x: e.clientX, y: e.clientY };
+            const deltaX = currentX - state.lastPos.x;
+            const deltaY = currentY - state.lastPos.y;
+            state.lastPos = { x: currentX, y: currentY };
 
             if (!state.isDragging && dist > DRAG_THRESHOLD) {
                 state.isDragging = true;
@@ -107,12 +112,12 @@ export class InputManager {
                 }
 
                 if (handlers.onDragStart) {
-                    handlers.onDragStart(e, { dx, dy, deltaX, deltaY });
+                    handlers.onDragStart(e, { x: currentX, y: currentY, dx, dy, deltaX, deltaY });
                 }
             }
 
             if (state.isDragging && handlers.onDrag) {
-                handlers.onDrag(e, { dx, dy, deltaX, deltaY });
+                handlers.onDrag(e, { x: currentX, y: currentY, dx, dy, deltaX, deltaY });
             }
         };
 

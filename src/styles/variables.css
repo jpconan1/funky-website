@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
 @font-face {
     font-family: 'IBM VGA';
@@ -26,4 +26,7 @@
     --z-start-menu: 2000;
     --z-submenu: 2500;
     --z-context-menu: 3000;
+
+    /* Mobile Scaling */
+    --ui-scale: 1;
 }
