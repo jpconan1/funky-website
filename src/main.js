@@ -4,12 +4,15 @@ import epaLogo from './assets/epa.png'
 
 const app = document.querySelector('#app')
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-const defaultScale = isMobile ? '1.5' : '1';
-const savedScale = localStorage.getItem('ui-scale') || defaultScale;
-document.documentElement.style.setProperty('--ui-scale', savedScale);
-if (!localStorage.getItem('ui-scale')) {
+let savedScale = localStorage.getItem('ui-scale');
+
+if (!localStorage.getItem('ui-scale-initialized')) {
+  savedScale = isMobile ? '1.5' : '1';
   localStorage.setItem('ui-scale', savedScale);
+  localStorage.setItem('ui-scale-initialized', 'true');
 }
+
+document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
 
 function addLine(text = '') {
   const line = document.createElement('div')
