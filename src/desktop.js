@@ -339,8 +339,12 @@ export async function initDesktop() {
         Mouse.setScale(mouse, { x: 1 / scale, y: 1 / scale });
     };
 
-    window.addEventListener('ui-scale-changed', updateMouseScale);
+    window.addEventListener('ui-scale-changed', () => {
+        updateMouseScale();
+        updateWalls();
+    });
     updateMouseScale(); // Init
+    updateWalls(); // Init
 
     const mouseConstraint = MouseConstraint.create(engine, {
         mouse: mouse,

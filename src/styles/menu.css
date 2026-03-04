@@ -13,6 +13,9 @@
     border-image-repeat: stretch;
 
     width: 550px;
+    max-height: calc((100dvh / var(--ui-scale)) - 60px);
+    overflow-y: auto;
+    overflow-x: hidden;
     image-rendering: pixelated;
     pointer-events: auto;
 }
@@ -153,7 +156,7 @@
     text-transform: none;
     letter-spacing: normal;
     text-align: left;
-    max-height: calc(100vh - 160px);
+    max-height: calc((100dvh / var(--ui-scale)) - 160px);
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;

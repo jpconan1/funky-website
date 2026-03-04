@@ -3,8 +3,13 @@ import bootConfig from './boot-config.json'
 import epaLogo from './assets/epa.png'
 
 const app = document.querySelector('#app')
-const savedScale = localStorage.getItem('ui-scale') || '1';
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const defaultScale = isMobile ? '1.5' : '1';
+const savedScale = localStorage.getItem('ui-scale') || defaultScale;
 document.documentElement.style.setProperty('--ui-scale', savedScale);
+if (!localStorage.getItem('ui-scale')) {
+  localStorage.setItem('ui-scale', savedScale);
+}
 
 function addLine(text = '') {
   const line = document.createElement('div')
@@ -26,6 +31,7 @@ async function typeText(text, speed = 50) {
 
 async function runBootSequence() {
   const { header, sequence } = bootConfig
+  app.classList.add('booting')
 
   // Header with EPA logo from assets
   app.innerHTML = `
@@ -65,6 +71,7 @@ async function runBootSequence() {
         break
     }
   }
+  app.classList.remove('booting')
 }
 
 import { initDesktop } from './desktop.js'

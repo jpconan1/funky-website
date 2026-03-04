@@ -5,24 +5,35 @@ body {
     font-family: var(--bios-font);
     overflow: hidden;
     height: 100vh;
+    height: 100dvh;
     width: 100vw;
     display: flex;
     flex-direction: column;
 }
 
+* {
+    box-sizing: border-box;
+}
+
 #app {
-    padding: 2rem;
+    padding: 0;
+    /* Removed padding to avoid layout shifts */
     font-size: 1.5rem;
     line-height: 1.2;
     flex: 1;
     position: relative;
-    overflow: auto;
+    overflow: hidden;
+    /* Changed from auto to prevent taskbar floating */
 
     /* Scaling Context */
     transform: scale(var(--ui-scale));
     transform-origin: 0 0;
     width: calc(100% / var(--ui-scale)) !important;
     height: calc(100% / var(--ui-scale)) !important;
+}
+
+#app.booting {
+    padding: 2rem;
 }
 
 /* CRT Scanline Effect */
