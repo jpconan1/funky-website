@@ -248,6 +248,8 @@ export class WindowManager {
                 const titleSpan = win.querySelector('.window-title');
                 if (titleSpan) titleSpan.textContent = newTitle;
             },
+            minWidth: 200,
+            minHeight: 150,
             // Hook so the ZoomBar can call back into setWindowScale
             _wmSetScale: (val) => this.setWindowScale(windowData, val)
         };
@@ -423,8 +425,11 @@ export class WindowManager {
             const deltaX = coords.x - this.resizeStart.x;
             const deltaY = coords.y - this.resizeStart.y;
 
-            const newWidth = Math.max(200, this.resizeStart.width + deltaX);
-            const newHeight = Math.max(150, this.resizeStart.height + deltaY);
+            const minW = this.activeWindow.minWidth || 200;
+            const minH = this.activeWindow.minHeight || 150;
+
+            const newWidth = Math.max(minW, this.resizeStart.width + deltaX);
+            const newHeight = Math.max(minH, this.resizeStart.height + deltaY);
 
             this.activeWindow.element.style.width = `${newWidth}px`;
             this.activeWindow.element.style.height = `${newHeight}px`;

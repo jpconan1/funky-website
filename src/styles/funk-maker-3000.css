@@ -133,7 +133,7 @@
 
 .voice-row {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 15px;
     align-items: flex-end;
     padding: 10px;
@@ -174,4 +174,49 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
+}
+
+.presets-row {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+}
+
+.preset-btn {
+    padding: 2px 12px !important;
+    font-size: 11px !important;
+    height: 26px !important;
+    white-space: nowrap;
+    width: auto !important;
+    min-width: fit-content !important;
+}
+
+.randomize-btn {
+    margin-left: auto;
+    background: #ea461D !important;
+    border-color: #ff5e3d !important;
+    color: white !important;
+}
+
+.randomize-btn:hover {
+    background: #ff5e3d !important;
+}
+
+.oscillator-toolbar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.oscillator-toolbar-container .ui-label {
+    margin-bottom: 0;
 }
