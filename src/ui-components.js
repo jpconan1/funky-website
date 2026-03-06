@@ -1,4 +1,92 @@
 export const UI = {
+
+    /**
+     * Vertical slider — uses a native <input type="range"> that is CSS-rotated
+     * 90° so it feels natural for height/zoom controls.
+     * The thumb is intentionally large so it's easy to grab on mobile.
+     *
+     * @param {number} min
+     * @param {number} max
+     * @param {number} value  initial value
+     * @param {Function} onChange  called with the numeric value on every change
+     * @param {number} [step=0.01]
+     * @returns {HTMLElement}  the outer wrapper element
+     */
+    createVerticalSlider(min, max, value, onChange, step = 0.01) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ui-vslider-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'ui-vslider-label';
+        label.textContent = `${Math.round(value * 100)}%`;
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'ui-vslider';
+        slider.min = min;
+        slider.max = max;
+        slider.step = step;
+        slider.value = value;
+        // Prevent the page from scrolling while the user drags the slider
+        slider.style.touchAction = 'none';
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            label.textContent = `${Math.round(val * 100)}%`;
+            onChange(val);
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(slider);
+
+        /** Expose a method so the WindowManager can update the thumb position
+         *  when the scale changes from somewhere else (e.g. pinch-to-zoom). */
+        wrapper.setValue = (newVal) => {
+            slider.value = newVal;
+            label.textContent = `${Math.round(newVal * 100)}%`;
+        };
+
+        return wrapper;
+    },
+
+    /**
+     * Horizontal zoom slider — same native range but laid out horizontally.
+     * Used when the window is too close to the left edge for the vertical bar.
+     */
+    createHorizontalZoomSlider(min, max, value, onChange, step = 0.01) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ui-hslider-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'ui-hslider-label';
+        label.textContent = `${Math.round(value * 100)}%`;
+
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.className = 'ui-hslider';
+        slider.min = min;
+        slider.max = max;
+        slider.step = step;
+        slider.value = value;
+        slider.style.touchAction = 'none';
+
+        slider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            label.textContent = `${Math.round(val * 100)}%`;
+            onChange(val);
+        });
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(slider);
+
+        wrapper.setValue = (newVal) => {
+            slider.value = newVal;
+            label.textContent = `${Math.round(newVal * 100)}%`;
+        };
+
+        return wrapper;
+    },
+
     createDropdown(label, options, onChange) {
         const container = document.createElement('div');
         container.className = 'ui-field ui-dropdown-container';

@@ -1,4 +1,5 @@
 import { InputManager } from './input-manager.js';
+import { UI } from './ui-components.js';
 
 export class WindowManager {
     constructor() {
@@ -41,12 +42,7 @@ export class WindowManager {
         win.style.top = `${y}px`;
 
         win.innerHTML = `
-            <div class="window-scale-bar" title="Zoom Window">
-                <div class="window-scale-label">100%</div>
-                <div class="window-scale-track">
-                    <div class="window-scale-handle"></div>
-                </div>
-            </div>
+            <div class="window-scale-bar" title="Zoom Window"></div>
             <div class="window-body">
                 <div class="window-header">
                     <div class="window-title-bar">
@@ -177,82 +173,54 @@ export class WindowManager {
     setupScaleSlider(windowData) {
         const win = windowData.element;
         const bar = win.querySelector('.window-scale-bar');
-        const track = win.querySelector('.window-scale-track');
-        const handle = win.querySelector('.window-scale-handle');
-        const label = win.querySelector('.window-scale-label');
 
         const MIN_SCALE = 0.5;
         const MAX_SCALE = 1.0;
+        const initialScale = windowData.scale || 1.0;
         let isHorizontal = false;
 
-        const updateUI = (scale) => {
-            const percent = (scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
-            label.textContent = `${Math.round(scale * 100)}%`;
-            if (isHorizontal) {
-                // Left = min scale, Right = max scale
-                const xPercent = percent * 100;
-                handle.style.left = `${xPercent}%`;
-                handle.style.top = '';
-            } else {
-                // Top = max scale, Bottom = min scale
-                const yPercent = (1 - percent) * 100;
-                handle.style.top = `${yPercent}%`;
-                handle.style.left = '';
-            }
+        // ── Build both slider variants up-front; only one is shown at a time ──
+        const vSlider = UI.createVerticalSlider(MIN_SCALE, MAX_SCALE, initialScale, (val) => {
+            this.setWindowScale(windowData, val);
+        });
+
+        const hSlider = UI.createHorizontalZoomSlider(MIN_SCALE, MAX_SCALE, initialScale, (val) => {
+            this.setWindowScale(windowData, val);
+        });
+
+        // Keep both in sync when scale changes programmatically
+        windowData.updateZoomSliders = (scale) => {
+            vSlider.setValue(scale);
+            hSlider.setValue(scale);
         };
 
-        // updateFromEvent must be defined BEFORE InputManager.attach calls it.
-        // Always compare raw clientX/Y against raw getBoundingClientRect values —
-        // both are in the same screen-pixel space, no scale correction needed.
-        const updateFromEvent = (e) => {
-            const rect = track.getBoundingClientRect();
-            let percent;
-            if (isHorizontal) {
-                if (rect.width === 0) return;
-                const relativeX = e.clientX - rect.left;
-                percent = Math.max(0, Math.min(1, relativeX / rect.width));
-            } else {
-                if (rect.height === 0) return;
-                const relativeY = e.clientY - rect.top;
-                percent = Math.max(0, Math.min(1, 1 - (relativeY / rect.height)));
-            }
-            const newScale = MIN_SCALE + percent * (MAX_SCALE - MIN_SCALE);
-            this.setWindowScale(windowData, newScale);
-            updateUI(newScale);
-        };
+        // While a slider is being dragged, suppress the window's CSS
+        // transition so the bar's counter-scale stays perfectly stable.
+        // (The old InputManager path used .window-zooming for this;
+        //  native range inputs need it wired up manually.)
+        const startZoom = () => windowData.element.classList.add('window-zooming');
+        const endZoom = () => windowData.element.classList.remove('window-zooming');
+
+        [vSlider, hSlider].forEach(wrapper => {
+            const input = wrapper.querySelector('input[type="range"]');
+            input.addEventListener('pointerdown', startZoom);
+            // pointerup fires even if the pointer leaves the element
+            input.addEventListener('pointerup', endZoom);
+            input.addEventListener('pointercancel', endZoom);
+        });
+
+        bar.appendChild(vSlider);
+        bar.appendChild(hSlider);
+        hSlider.style.display = 'none'; // start vertical
 
         // Called by checkScaleBarOrientation to flip the bar's layout.
         windowData.setScaleBarHorizontal = (horizontal) => {
             if (isHorizontal === horizontal) return;
             isHorizontal = horizontal;
             bar.classList.toggle('window-scale-bar--horizontal', horizontal);
-            // Re-draw handle at current scale
-            updateUI(windowData.scale || 1);
+            vSlider.style.display = horizontal ? 'none' : '';
+            hSlider.style.display = horizontal ? '' : 'none';
         };
-
-        InputManager.attach(track, {
-            owner: 'window-scale',
-            onDown: (e) => {
-                this.focusWindow(windowData);
-                // Do NOT snap scale on bare tap — only on intentional drag.
-                return true;
-            },
-            onDragStart: (e) => {
-                InputManager.lock('window-scale');
-                windowData.element.classList.add('window-zooming');
-                updateFromEvent(e);
-            },
-            onDrag: (e) => {
-                updateFromEvent(e);
-            },
-            onDragEnd: () => {
-                windowData.element.classList.remove('window-zooming');
-                InputManager.unlock('window-scale');
-            }
-        });
-
-        // Initialize
-        updateUI(windowData.scale || 1);
     }
 
     /**
@@ -278,6 +246,11 @@ export class WindowManager {
         windowData.element.style.setProperty('--win-scale', clampedScale);
         windowData.element.style.transform = `scale(${clampedScale})`;
         windowData.element.style.transformOrigin = '0 0';
+
+        // Keep the UI sliders in sync (e.g. when pinch-to-zoom drives the scale)
+        if (windowData.updateZoomSliders) {
+            windowData.updateZoomSliders(clampedScale);
+        }
 
         // Fire an event if other components need to know about the scale change
         windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clampedScale } }));
@@ -328,8 +301,9 @@ export class WindowManager {
             let left = coords.x - this.dragOffset.x;
             let top = coords.y - this.dragOffset.y;
 
-            // Constrain to viewport (optional, but usually good)
-            const padding = 10;
+            // Allow dragging past desktop edges, but keep a minimum "grip strip"
+            // so the user can always pull the window back.
+            const minVisible = 80; // px of window that must remain on-screen
             const desktopWidth = this.desktop.clientWidth;
             const desktopHeight = this.desktop.clientHeight;
             const winScale = this.activeWindow.scale || 1;
@@ -337,8 +311,13 @@ export class WindowManager {
             const visualWidth = this.activeWindow.element.offsetWidth * winScale;
             const visualHeight = this.activeWindow.element.offsetHeight * winScale;
 
-            left = Math.max(padding, Math.min(left, desktopWidth - visualWidth - padding));
-            top = Math.max(padding, Math.min(top, desktopHeight - visualHeight - padding));
+            const maxLeft = desktopWidth - minVisible;       // slide off right
+            const minLeft = -(visualWidth - minVisible);      // slide off left
+            const maxTop = desktopHeight - minVisible;       // slide off bottom
+            const minTop = 0;                                  // keep title bar reachable
+
+            left = Math.max(minLeft, Math.min(left, maxLeft));
+            top = Math.max(minTop, Math.min(top, maxTop));
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;

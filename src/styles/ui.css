@@ -347,3 +347,143 @@
 .ui-tool-button.selected .ui-tool-icon {
     transform: translate(1px, 1px);
 }
+
+/* ── Vertical Zoom Slider ──────────────────────────────────────────────── */
+/* Used by window-manager for the per-window zoom control on the left edge. */
+
+.ui-vslider-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    /* The wrapper itself is the panel sitting beside the window            */
+    width: 36px;
+    /* height is set inline by window-manager so it tracks window height    */
+}
+
+.ui-vslider-label {
+    font-family: var(--bios-font);
+    font-size: 9px;
+    color: var(--bios-text);
+    white-space: nowrap;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/*
+ * We rotate the native range input so it runs top-to-bottom.
+ * writing-mode is the clean, modern way; we also keep the old
+ * -webkit-appearance: slider-vertical fallback for older Safari.
+ * The slider is 100% of the wrapper height minus label space;
+ * because rotation swaps inline/block axes we set the "width"
+ * in CSS to be the actual visual height we want.
+ */
+.ui-vslider {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    /* modern path — rotates slider vertically  */
+    direction: rtl;
+    /* top = max, bottom = min                  */
+    width: 100%;
+    /* after rotation this becomes the height   */
+    flex: 1;
+    background: rgba(238, 241, 219, 0.18);
+    border-radius: 3px;
+    outline: none;
+    cursor: ns-resize;
+    touch-action: none;
+    /* Track colour */
+    accent-color: var(--color-orange);
+}
+
+/* Large thumb — easy to hit on mobile (≥44 px visual target) */
+.ui-vslider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: var(--color-orange);
+    border: 2.5px solid var(--color-creme);
+    border-radius: 6px;
+    cursor: ns-resize;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.ui-vslider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+    box-shadow: 0 4px 14px rgba(234, 70, 29, 0.55);
+}
+
+.ui-vslider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: var(--color-orange);
+    border: 2.5px solid var(--color-creme);
+    border-radius: 6px;
+    cursor: ns-resize;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Horizontal Zoom Slider ────────────────────────────────────────────── */
+/* Shown above the window when it's too close to the left edge.            */
+
+.ui-hslider-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    /* width is set inline by window-manager to match window width          */
+    padding: 0 6px;
+}
+
+.ui-hslider-label {
+    font-family: var(--bios-font);
+    font-size: 9px;
+    color: var(--bios-text);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ui-hslider {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 5px;
+    background: rgba(238, 241, 219, 0.18);
+    border-radius: 3px;
+    outline: none;
+    cursor: ew-resize;
+    touch-action: none;
+    accent-color: var(--color-orange);
+}
+
+.ui-hslider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 28px;
+    height: 28px;
+    background: var(--color-orange);
+    border: 2.5px solid var(--color-creme);
+    border-radius: 6px;
+    cursor: ew-resize;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.ui-hslider::-webkit-slider-thumb:active {
+    transform: scale(1.15);
+    box-shadow: 0 4px 14px rgba(234, 70, 29, 0.55);
+}
+
+.ui-hslider::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    background: var(--color-orange);
+    border: 2.5px solid var(--color-creme);
+    border-radius: 6px;
+    cursor: ew-resize;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
