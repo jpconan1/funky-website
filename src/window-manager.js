@@ -141,19 +141,6 @@ export class WindowManager {
             }
         }, { passive: false });
 
-        // Block Safari's horizontal-swipe (back/forward) gesture when the user
-        // drags a range slider. Safari detects a swipe and steals the gesture
-        // from the slider if the pointer moves horizontally near the edge.
-        // We catch touchstart (non-passive so preventDefault is effective) on
-        // any <input type="range"> inside this window and suppress the default
-        // browser gesture — pointer events for the slider still fire normally.
-        win.addEventListener('touchstart', (e) => {
-            const isRangeInput = e.target.tagName === 'INPUT' && e.target.type === 'range';
-            if (isRangeInput) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
         closeBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
         });
@@ -284,13 +271,6 @@ export class WindowManager {
         const winRect = windowData.element.getBoundingClientRect();
         const winScale = windowData.scale || 1;
 
-        // The global --ui-scale is applied as a CSS transform: scale() on #app,
-        // so getBoundingClientRect() values are in SCREEN pixels (logical × globalScale).
-        // We need globalScale to convert screen-space offsets back to window-local logical px.
-        const globalScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
-        // Combined divisor: screen px → window-local logical px
-        const toLocal = winScale * globalScale;
-
         // How much screen-space is available to the left of the window?
         const spaceLeftScreen = winRect.left - desktopRect.left;
 
@@ -313,28 +293,28 @@ export class WindowManager {
             const idealScreenLeft = winRect.left;
             const clampedScreenLeft = Math.max(desktopRect.left, idealScreenLeft);
 
-            // Convert screen-space offset back to window-local logical px.
-            // Must divide by both winScale (per-window CSS transform) and globalScale
-            // (the #app CSS transform(scale)) so the CSS custom property lands correctly.
-            const localLeft = (clampedScreenLeft - winRect.left) / toLocal;
-            const localTop = -(H_BAR_H + GAP) / toLocal;
+            // Convert back to window-local coordinates (divide by winScale because
+            // the bar itself counter-scales, so setting CSS left in window-logical px
+            // puts it in the right place).
+            const localLeft = (clampedScreenLeft - winRect.left) / winScale;
+            const localTop = -(H_BAR_H + GAP) / winScale;
 
             bar.style.setProperty('--scale-bar-left', `${localLeft}px`);
             bar.style.setProperty('--scale-bar-top', `${localTop}px`);
         } else {
             // ── Vertical bar (left of window) ──
             // Ideal: right edge of bar is flush against the window's left edge with a tiny gap.
-            // In local coords: -(BAR_W + GAP) / toLocal
-            const idealLocalLeft = -(BAR_W + GAP) / toLocal;
+            // Ideal local left = -(BAR_W + GAP)
+            const idealLocalLeft = -(BAR_W + GAP) / winScale;
 
             // Clamp: bar's screen left must not go past desktop left.
-            // Bar's screen left = winRect.left + idealLocalLeft * toLocal
-            const barScreenLeft = winRect.left + idealLocalLeft * toLocal;
+            // Bar's screen left = winRect.left + idealLocalLeft * winScale
+            const barScreenLeft = winRect.left + idealLocalLeft * winScale;
             const clampedBarScreenLeft = Math.max(desktopRect.left, barScreenLeft);
-            const clampedLocalLeft = (clampedBarScreenLeft - winRect.left) / toLocal;
+            const clampedLocalLeft = (clampedBarScreenLeft - winRect.left) / winScale;
 
             bar.style.setProperty('--scale-bar-left', `${clampedLocalLeft}px`);
-            bar.style.setProperty('--scale-bar-top', `${GAP / toLocal}px`);
+            bar.style.setProperty('--scale-bar-top', `${GAP / winScale}px`);
         }
     }
 

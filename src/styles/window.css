@@ -31,9 +31,8 @@
     width: 40px;
     height: 170px;
 
-    /* Undo BOTH the per-window scale AND the global --ui-scale so this bar is
-       always a stable 40×170px on screen regardless of zoom level. */
-    transform: scale(calc(1 / (var(--win-scale, 1) * var(--ui-scale, 1))));
+    /* Undo the parent window's scale so this bar is always screen-size-stable. */
+    transform: scale(calc(1 / var(--win-scale, 1)));
     transform-origin: top right;
 
     background: rgba(1, 48, 30, 0.85);
