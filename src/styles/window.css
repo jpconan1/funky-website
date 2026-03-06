@@ -183,6 +183,9 @@
     overflow: auto;
     color: var(--bios-text);
     background: rgba(0, 0, 0, 0.2);
+    /* Prevent Safari from stealing overscroll gestures (horizontal swipe) as
+       page back/forward navigation when touch starts inside a window. */
+    overscroll-behavior: none;
 }
 
 .txt-content {

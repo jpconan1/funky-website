@@ -120,10 +120,26 @@ export class WindowManager {
             }
         });
 
-        // Focus Handler
+        // Focus + touch-grab Handler.
+        // Capture pointerdown on the ENTIRE window so any touch that lands
+        // inside (even on an empty area, or the content scroll region) is
+        // owned by us.  This stops Safari from interpreting an accidental
+        // swipe that starts inside the window as a page back/forward gesture.
         win.addEventListener('pointerdown', (e) => {
             this.focusWindow(windowData);
-        }, { passive: true });
+            // Don't stopPropagation — let inner elements still receive the event —
+            // but DO call preventDefault to block the browser's overscroll /
+            // swipe-navigation gesture detection.
+            // We guard against inputs/buttons/textareas so they can still
+            // receive touch focus normally.
+            const tag = e.target.tagName;
+            const isInteractive = tag === 'INPUT' || tag === 'TEXTAREA' ||
+                tag === 'SELECT' || tag === 'BUTTON' || tag === 'A' ||
+                e.target.isContentEditable;
+            if (!isInteractive) {
+                e.preventDefault();
+            }
+        }, { passive: false });
 
         closeBtn.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
@@ -195,11 +211,20 @@ export class WindowManager {
         };
 
         // While a slider is being dragged, suppress the window's CSS
-        // transition so the bar's counter-scale stays perfectly stable.
-        // (The old InputManager path used .window-zooming for this;
-        //  native range inputs need it wired up manually.)
-        const startZoom = () => windowData.element.classList.add('window-zooming');
-        const endZoom = () => windowData.element.classList.remove('window-zooming');
+        // transition AND the scale-bar's position transition so the bar
+        // stays perfectly stable — no jitter when the window is partially
+        // off-screen and the clamping math recalculates on every frame.
+        const startZoom = () => {
+            windowData.element.classList.add('window-zooming');
+            // Also freeze the bar's own left/top transition so it snaps
+            // instantly rather than lagging behind during the drag.
+            bar.style.transition = 'none';
+        };
+        const endZoom = () => {
+            windowData.element.classList.remove('window-zooming');
+            // Restore the bar's smooth transition only after the drag ends.
+            bar.style.transition = '';
+        };
 
         [vSlider, hSlider].forEach(wrapper => {
             const input = wrapper.querySelector('input[type="range"]');
