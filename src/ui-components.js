@@ -1,3 +1,30 @@
+/**
+ * Prevent Safari's back/forward swipe gesture from firing while the user
+ * is dragging a slider. Safari does NOT honour `touch-action: none` on
+ * range inputs, so we must attach a *non-passive* touchmove listener and
+ * call preventDefault() ourselves.
+ *
+ * @param {HTMLInputElement} sliderEl  The <input type="range"> element.
+ */
+function _preventSwipeNav(sliderEl) {
+    // touchstart must also be non-passive so the subsequent touchmove can
+    // be cancelled (Chrome/Safari require the first event in the chain to
+    // be cancelable for the rest to be cancellable too).
+    sliderEl.addEventListener('touchstart', (e) => {
+        // Only prevent default for horizontal swipes on vertical sliders and
+        // horizontal drags in general — we still want vertical scroll to work
+        // on purely vertical sliders if the user's gesture is vertical, but
+        // for simplicity preventing all default on the slider element is safe
+        // because the slider itself handles the interaction.
+        e.stopPropagation();
+    }, { passive: false });
+
+    sliderEl.addEventListener('touchmove', (e) => {
+        e.preventDefault();   // ← blocks Safari back/forward swipe
+        e.stopPropagation();
+    }, { passive: false });
+}
+
 export const UI = {
 
     /**
@@ -29,6 +56,8 @@ export const UI = {
         slider.value = value;
         // Prevent the page from scrolling while the user drags the slider
         slider.style.touchAction = 'none';
+        // Prevent Safari's back/forward swipe from firing during slider drag
+        _preventSwipeNav(slider);
 
         slider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
@@ -69,6 +98,8 @@ export const UI = {
         slider.step = step;
         slider.value = value;
         slider.style.touchAction = 'none';
+        // Prevent Safari's back/forward swipe from firing during slider drag
+        _preventSwipeNav(slider);
 
         slider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
@@ -138,6 +169,9 @@ export const UI = {
         slider.step = step;
         slider.value = value;
         slider.className = 'ui-slider';
+        slider.style.touchAction = 'none';
+        // Prevent Safari's back/forward swipe from firing during slider drag
+        _preventSwipeNav(slider);
 
         slider.addEventListener('input', (e) => {
             let val = e.target.value;
