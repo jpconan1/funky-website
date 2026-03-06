@@ -1,13 +1,146 @@
 import { InputManager } from './input-manager.js';
 import { UI } from './ui-components.js';
 
+// ─── Shared Zoom Bar ──────────────────────────────────────────────────────────
+// One overlay element lives on #desktop (same coord space as window left/top).
+// It tracks whichever window is currently focused, so positioning only ever
+// needs window.offsetLeft / window.offsetTop — no scale-space conversion at all.
+class ZoomBar {
+    constructor(desktop) {
+        this.desktop = desktop;
+        this.targetWindow = null; // windowData currently being tracked
+
+        const MIN = 0.5;
+        const MAX = 1.0;
+
+        // ── Build one vertical and one horizontal slider ──────────────────────
+        this.vSlider = UI.createVerticalSlider(MIN, MAX, 1.0, (val) => {
+            if (this.targetWindow) this._applyScale(val);
+        });
+        this.hSlider = UI.createHorizontalZoomSlider(MIN, MAX, 1.0, (val) => {
+            if (this.targetWindow) this._applyScale(val);
+        });
+
+        // ── Overlay shell ─────────────────────────────────────────────────────
+        this.el = document.createElement('div');
+        this.el.className = 'zoom-bar-overlay zoom-bar-overlay--vertical';
+        this.el.appendChild(this.vSlider);
+        this.el.appendChild(this.hSlider);
+        this.hSlider.style.display = 'none';
+
+        // Suppress pointer events bubbling to the desktop physics layer
+        this.el.addEventListener('pointerdown', e => e.stopPropagation());
+
+        // Freeze window transition while dragging a slider
+        [this.vSlider, this.hSlider].forEach(wrapper => {
+            const input = wrapper.querySelector('input[type="range"]');
+            input.addEventListener('pointerdown', () => {
+                if (this.targetWindow) this.targetWindow.element.classList.add('window-zooming');
+            });
+            input.addEventListener('pointerup', () => {
+                if (this.targetWindow) this.targetWindow.element.classList.remove('window-zooming');
+            });
+            input.addEventListener('pointercancel', () => {
+                if (this.targetWindow) this.targetWindow.element.classList.remove('window-zooming');
+            });
+        });
+
+        desktop.appendChild(this.el);
+        this.el.style.display = 'none'; // hidden until a window is focused
+    }
+
+    // Called by WindowManager whenever a window is focused / moved / scaled.
+    track(windowData) {
+        this.targetWindow = windowData;
+        const scale = windowData.scale || 1.0;
+        this.vSlider.setValue(scale);
+        this.hSlider.setValue(scale);
+        this.el.style.display = '';
+        this.reposition();
+    }
+
+    hide() {
+        this.targetWindow = null;
+        this.el.style.display = 'none';
+    }
+
+    // Call whenever the tracked window moves or the desktop resizes.
+    reposition() {
+        if (!this.targetWindow) return;
+
+        const win = this.targetWindow.element;
+        const winScale = this.targetWindow.scale || 1;
+
+        // Window logical position (already in desktop-local pixels — no BoundingClientRect needed)
+        const winLeft = win.offsetLeft;
+        const winTop = win.offsetTop;
+        // Visual size = logical size × per-window scale
+        const winW = win.offsetWidth * winScale;
+        const winH = win.offsetHeight * winScale;
+
+        // Desktop logical size (no global scale involved — offsetWidth is in CSS px)
+        const deskW = this.desktop.offsetWidth;
+        const deskH = this.desktop.offsetHeight;
+
+        // ── Decide orientation ────────────────────────────────────────────────
+        // Vertical bar: 46 px wide × 170 px tall, sits to the left of the window.
+        // Horizontal bar: 180 px wide × 40 px tall, sits above the window.
+        const BAR_VERT_W = 46;
+        const BAR_VERT_H = 170;
+        const BAR_HORIZ_W = 180;
+        const BAR_HORIZ_H = 40;
+        const GAP = 6; // px gap from window edge
+
+        const useHorizontal = winLeft < (BAR_VERT_W + GAP);
+
+        if (useHorizontal !== this._isHorizontal) {
+            this._isHorizontal = useHorizontal;
+            this.el.classList.toggle('zoom-bar-overlay--horizontal', useHorizontal);
+            this.el.classList.toggle('zoom-bar-overlay--vertical', !useHorizontal);
+            this.vSlider.style.display = useHorizontal ? 'none' : '';
+            this.hSlider.style.display = useHorizontal ? '' : 'none';
+        }
+
+        let left, top;
+
+        if (useHorizontal) {
+            // Ideal: left-align with window's left edge.
+            // Clamp: don't let bar go past the desktop's left edge.
+            left = Math.max(0, winLeft);
+            // Also clamp right so bar doesn't overflow desktop
+            left = Math.min(left, deskW - BAR_HORIZ_W);
+            // Sit above the window, with a small gap.
+            // When the window is at the very top (y=0) nudge it below instead.
+            top = winTop - BAR_HORIZ_H - GAP;
+            if (top < 0) top = winTop + winH + GAP; // flip below
+        } else {
+            // Vertical bar flush-left of the window.
+            left = winLeft - BAR_VERT_W - GAP;
+            // Clamp: never go past desktop left edge.
+            left = Math.max(0, left);
+            // Vertically: align with window top, clamped within desktop.
+            top = Math.max(0, Math.min(winTop + GAP, deskH - BAR_VERT_H));
+        }
+
+        this.el.style.left = `${left}px`;
+        this.el.style.top = `${top}px`;
+    }
+
+    _applyScale(val) {
+        // Delegate back to WindowManager via the windowData reference.
+        if (this.targetWindow && this.targetWindow._wmSetScale) {
+            this.targetWindow._wmSetScale(val);
+        }
+    }
+}
+
+// ─── WindowManager ────────────────────────────────────────────────────────────
 export class WindowManager {
     constructor() {
         this.windows = [];
         this.highestZIndex = 100;
         this._desktop = null;
-
-        // No more global window listeners. InputManager handles this per-interaction.
+        this._zoomBar = null; // lazily created after desktop mounts
 
         this.activeWindow = null;
         this.isDragging = false;
@@ -21,6 +154,13 @@ export class WindowManager {
             this._desktop = document.querySelector('#desktop');
         }
         return this._desktop;
+    }
+
+    get zoomBar() {
+        if (!this._zoomBar) {
+            this._zoomBar = new ZoomBar(this.desktop);
+        }
+        return this._zoomBar;
     }
 
     createWindow(title, contentHTML) {
@@ -42,7 +182,6 @@ export class WindowManager {
         win.style.top = `${y}px`;
 
         win.innerHTML = `
-            <div class="window-scale-bar" title="Zoom Window"></div>
             <div class="window-body">
                 <div class="window-header">
                     <div class="window-title-bar">
@@ -70,19 +209,17 @@ export class WindowManager {
             id,
             element: win,
             title,
+            scale: 1.0,
             setTitle: (newTitle) => {
                 windowData.title = newTitle;
                 const titleSpan = win.querySelector('.window-title');
                 if (titleSpan) titleSpan.textContent = newTitle;
-            }
+            },
+            // Hook so the ZoomBar can call back into setWindowScale
+            _wmSetScale: (val) => this.setWindowScale(windowData, val)
         };
 
         this.windows.push(windowData);
-
-        // Scale Control Setup
-        this.setupScaleSlider(windowData);
-        // Set initial orientation based on spawn position
-        requestAnimationFrame(() => this.checkScaleBarOrientation(windowData));
 
         // Event Listeners
         const header = win.querySelector('.window-header');
@@ -96,7 +233,6 @@ export class WindowManager {
             onDown: (e) => {
                 this.focusWindow(windowData);
                 const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
-                // rect is in screen space. e.clientX is in screen space.
                 const rect = windowData.element.getBoundingClientRect();
                 this.dragOffset = {
                     x: (e.clientX - rect.left) / scale,
@@ -120,18 +256,9 @@ export class WindowManager {
             }
         });
 
-        // Focus + touch-grab Handler.
-        // Capture pointerdown on the ENTIRE window so any touch that lands
-        // inside (even on an empty area, or the content scroll region) is
-        // owned by us.  This stops Safari from interpreting an accidental
-        // swipe that starts inside the window as a page back/forward gesture.
+        // Focus + touch-grab Handler
         win.addEventListener('pointerdown', (e) => {
             this.focusWindow(windowData);
-            // Don't stopPropagation — let inner elements still receive the event —
-            // but DO call preventDefault to block the browser's overscroll /
-            // swipe-navigation gesture detection.
-            // We guard against inputs/buttons/textareas so they can still
-            // receive touch focus normally.
             const tag = e.target.tagName;
             const isInteractive = tag === 'INPUT' || tag === 'TEXTAREA' ||
                 tag === 'SELECT' || tag === 'BUTTON' || tag === 'A' ||
@@ -183,199 +310,48 @@ export class WindowManager {
             }
         });
 
+        // Show zoom bar for this window on focus
+        this.focusWindow(windowData);
+
         return windowData;
     }
 
-    setupScaleSlider(windowData) {
-        const win = windowData.element;
-        const bar = win.querySelector('.window-scale-bar');
-
-        const MIN_SCALE = 0.5;
-        const MAX_SCALE = 1.0;
-        const initialScale = windowData.scale || 1.0;
-        let isHorizontal = false;
-
-        // ── Build both slider variants up-front; only one is shown at a time ──
-        const vSlider = UI.createVerticalSlider(MIN_SCALE, MAX_SCALE, initialScale, (val) => {
-            this.setWindowScale(windowData, val);
-        });
-
-        const hSlider = UI.createHorizontalZoomSlider(MIN_SCALE, MAX_SCALE, initialScale, (val) => {
-            this.setWindowScale(windowData, val);
-        });
-
-        // Keep both in sync when scale changes programmatically
-        windowData.updateZoomSliders = (scale) => {
-            vSlider.setValue(scale);
-            hSlider.setValue(scale);
-        };
-
-        // While a slider is being dragged, suppress the window's CSS
-        // transition AND the scale-bar's position transition so the bar
-        // stays perfectly stable — no jitter when the window is partially
-        // off-screen and the clamping math recalculates on every frame.
-        const startZoom = () => {
-            windowData.element.classList.add('window-zooming');
-            // Also freeze the bar's own left/top transition so it snaps
-            // instantly rather than lagging behind during the drag.
-            bar.style.transition = 'none';
-        };
-        const endZoom = () => {
-            windowData.element.classList.remove('window-zooming');
-            // Restore the bar's smooth transition only after the drag ends.
-            bar.style.transition = '';
-        };
-
-        [vSlider, hSlider].forEach(wrapper => {
-            const input = wrapper.querySelector('input[type="range"]');
-            input.addEventListener('pointerdown', startZoom);
-            // pointerup fires even if the pointer leaves the element
-            input.addEventListener('pointerup', endZoom);
-            input.addEventListener('pointercancel', endZoom);
-        });
-
-        bar.appendChild(vSlider);
-        bar.appendChild(hSlider);
-        hSlider.style.display = 'none'; // start vertical
-
-        // Called by checkScaleBarOrientation to flip the bar's layout.
-        windowData.setScaleBarHorizontal = (horizontal) => {
-            if (isHorizontal === horizontal) return;
-            isHorizontal = horizontal;
-            bar.classList.toggle('window-scale-bar--horizontal', horizontal);
-            vSlider.style.display = horizontal ? 'none' : '';
-            hSlider.style.display = horizontal ? '' : 'none';
-        };
-    }
-
-    /**
-     * Repositions the scale bar every time the window moves so it always stays
-     * inside the visible desktop area.
-     *
-     * Two modes:
-     *   Vertical   – bar sits to the LEFT of the window (default)
-     *   Horizontal – bar sits ABOVE the window (when the window's left side is
-     *                close to or past the desktop's left edge)
-     *
-     * In both modes we compute a clamped CSS offset (window-local coordinates,
-     * accounting for the window's own CSS scale) and write it to CSS custom
-     * properties so the bar follows the desktop edge smoothly.
-     */
-    checkScaleBarOrientation(windowData) {
-        if (!windowData.setScaleBarHorizontal) return;
-
-        const bar = windowData.element.querySelector('.window-scale-bar');
-        if (!bar) return;
-
-        const desktopRect = this.desktop.getBoundingClientRect();
-        const winRect = windowData.element.getBoundingClientRect();
-        const winScale = windowData.scale || 1;
-
-        // How much screen-space is available to the left of the window?
-        const spaceLeftScreen = winRect.left - desktopRect.left;
-
-        // Bar dimensions in screen space (bar counter-scales so it is always 40×170px on screen)
-        const BAR_W = 40;   // screen px
-        const BAR_H = 170;  // screen px
-        const H_BAR_W = 180; // horizontal bar width in screen px
-        const H_BAR_H = 40;  // horizontal bar height in screen px
-        const GAP = 6;       // gap from window edge in screen px
-
-        // Switch to horizontal mode if there isn't enough room on the left.
-        const useHorizontal = spaceLeftScreen < (BAR_W + GAP);
-        windowData.setScaleBarHorizontal(useHorizontal);
-
-        if (useHorizontal) {
-            // ── Horizontal bar (above window) ──
-            // Ideal: left edge of bar aligns with left edge of window (window-local 0).
-            // In screen space the bar's ideal left is winRect.left.
-            // Clamp so the bar's left never goes past the desktop's left edge.
-            const idealScreenLeft = winRect.left;
-            const clampedScreenLeft = Math.max(desktopRect.left, idealScreenLeft);
-
-            // Convert back to window-local coordinates (divide by winScale because
-            // the bar itself counter-scales, so setting CSS left in window-logical px
-            // puts it in the right place).
-            const localLeft = (clampedScreenLeft - winRect.left) / winScale;
-            const localTop = -(H_BAR_H + GAP) / winScale;
-
-            bar.style.setProperty('--scale-bar-left', `${localLeft}px`);
-            bar.style.setProperty('--scale-bar-top', `${localTop}px`);
-        } else {
-            // ── Vertical bar (left of window) ──
-            // Ideal: right edge of bar is flush against the window's left edge with a tiny gap.
-            // Ideal local left = -(BAR_W + GAP)
-            const idealLocalLeft = -(BAR_W + GAP) / winScale;
-
-            // Clamp: bar's screen left must not go past desktop left.
-            // Bar's screen left = winRect.left + idealLocalLeft * winScale
-            const barScreenLeft = winRect.left + idealLocalLeft * winScale;
-            const clampedBarScreenLeft = Math.max(desktopRect.left, barScreenLeft);
-            const clampedLocalLeft = (clampedBarScreenLeft - winRect.left) / winScale;
-
-            bar.style.setProperty('--scale-bar-left', `${clampedLocalLeft}px`);
-            bar.style.setProperty('--scale-bar-top', `${GAP / winScale}px`);
-        }
-    }
-
-    setWindowScale(windowData, scale) {
-        // Clamp scale to reasonable values (0.5x to 1.0x)
-        const clampedScale = Math.max(0.5, Math.min(scale, 1.0));
-        windowData.scale = clampedScale;
-
-        // Apply transform directly using origin consistent with viewport conservation
-        windowData.element.style.setProperty('--win-scale', clampedScale);
-        windowData.element.style.transform = `scale(${clampedScale})`;
-        windowData.element.style.transformOrigin = '0 0';
-
-        // Keep the UI sliders in sync (e.g. when pinch-to-zoom drives the scale)
-        if (windowData.updateZoomSliders) {
-            windowData.updateZoomSliders(clampedScale);
-        }
-
-        // Re-run bar orientation after scale changes (bar counter-scale shifts its effective position)
-        this.checkScaleBarOrientation(windowData);
-
-        // Fire an event if other components need to know about the scale change
-        windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clampedScale } }));
-    }
-
     focusWindow(windowData) {
-
         if (parseInt(windowData.element.style.zIndex) < this.highestZIndex) {
             windowData.element.style.zIndex = ++this.highestZIndex;
         }
+        // Point the shared zoom bar at the newly-focused window
+        this.zoomBar.track(windowData);
+    }
+
+    setWindowScale(windowData, scale) {
+        const clamped = Math.max(0.5, Math.min(scale, 1.0));
+        windowData.scale = clamped;
+
+        windowData.element.style.setProperty('--win-scale', clamped);
+        windowData.element.style.transform = `scale(${clamped})`;
+        windowData.element.style.transformOrigin = '0 0';
+
+        // Sync sliders if this window is the one currently tracked
+        if (this.zoomBar.targetWindow === windowData) {
+            this.zoomBar.vSlider.setValue(clamped);
+            this.zoomBar.hSlider.setValue(clamped);
+            this.zoomBar.reposition();
+        }
+
+        windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clamped } }));
     }
 
     closeWindow(windowData) {
+        // If the zoom bar was tracking this window, hide it
+        if (this.zoomBar.targetWindow === windowData) {
+            this.zoomBar.hide();
+        }
         windowData.element.classList.add('window-closing');
         setTimeout(() => {
             windowData.element.remove();
             this.windows = this.windows.filter(w => w.id !== windowData.id);
         }, 200);
-    }
-
-    startDragging(e, windowData) {
-        this.activeWindow = windowData;
-        this.isDragging = true;
-        const rect = windowData.element.getBoundingClientRect();
-        this.dragOffset = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
-        windowData.element.classList.add('window-moving');
-    }
-
-    startResizing(e, windowData) {
-        this.activeWindow = windowData;
-        this.isResizing = true;
-        this.resizeStart = {
-            width: windowData.element.offsetWidth,
-            height: windowData.element.offsetHeight,
-            x: e.clientX,
-            y: e.clientY
-        };
-        windowData.element.classList.add('window-resizing');
     }
 
     handlePointerMove(e, coords) {
@@ -385,9 +361,7 @@ export class WindowManager {
             let left = coords.x - this.dragOffset.x;
             let top = coords.y - this.dragOffset.y;
 
-            // Allow dragging past desktop edges, but keep a minimum "grip strip"
-            // so the user can always pull the window back.
-            const minVisible = 80; // px of window that must remain on-screen
+            const minVisible = 80;
             const desktopWidth = this.desktop.clientWidth;
             const desktopHeight = this.desktop.clientHeight;
             const winScale = this.activeWindow.scale || 1;
@@ -395,17 +369,19 @@ export class WindowManager {
             const visualWidth = this.activeWindow.element.offsetWidth * winScale;
             const visualHeight = this.activeWindow.element.offsetHeight * winScale;
 
-            const maxLeft = desktopWidth - minVisible;       // slide off right
-            const minLeft = -(visualWidth - minVisible);      // slide off left
-            const maxTop = desktopHeight - minVisible;       // slide off bottom
-            const minTop = 0;                                  // keep title bar reachable
+            const maxLeft = desktopWidth - minVisible;
+            const minLeft = -(visualWidth - minVisible);
+            const maxTop = desktopHeight - minVisible;
+            const minTop = 0;
 
             left = Math.max(minLeft, Math.min(left, maxLeft));
             top = Math.max(minTop, Math.min(top, maxTop));
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
-            this.checkScaleBarOrientation(this.activeWindow);
+
+            // Reposition zoom bar in the same coordinate space — no maths needed
+            this.zoomBar.reposition();
         }
 
         if (this.isResizing) {
@@ -417,6 +393,7 @@ export class WindowManager {
 
             this.activeWindow.element.style.width = `${newWidth}px`;
             this.activeWindow.element.style.height = `${newHeight}px`;
+            this.zoomBar.reposition();
         }
     }
 
@@ -430,6 +407,8 @@ export class WindowManager {
         this.isResizing = false;
     }
 
+    // ── Dialogs ───────────────────────────────────────────────────────────────
+
     alert(message, title = 'System Alert') {
         const content = document.createElement('div');
         content.className = 'alert-container';
@@ -442,20 +421,15 @@ export class WindowManager {
 
         const win = this.createWindow(title, content);
 
-        // Custom size for alerts
         win.element.style.width = '320px';
         win.element.style.height = 'auto';
         win.element.style.minHeight = '140px';
 
-        // Center the alert
         const desktopWidth = this.desktop.clientWidth;
         const desktopHeight = this.desktop.clientHeight;
-        const x = (desktopWidth - 320) / 2;
-        const y = (desktopHeight - 200) / 2;
-        win.element.style.left = `${x}px`;
-        win.element.style.top = `${y}px`;
+        win.element.style.left = `${(desktopWidth - 320) / 2}px`;
+        win.element.style.top = `${(desktopHeight - 200) / 2}px`;
 
-        // Hide resize handle for alerts
         const resizeHandle = win.element.querySelector('.window-resize-handle');
         if (resizeHandle) resizeHandle.style.display = 'none';
 
@@ -489,37 +463,25 @@ export class WindowManager {
 
         const win = this.createWindow(title, content);
 
-        // Custom size for alerts
         win.element.style.width = '320px';
         win.element.style.height = 'auto';
         win.element.style.minHeight = '140px';
 
-        // Center the alert
         const desktopWidth = this.desktop.clientWidth;
         const desktopHeight = this.desktop.clientHeight;
-        const x = (desktopWidth - 320) / 2;
-        const y = (desktopHeight - 200) / 2;
-        win.element.style.left = `${x}px`;
-        win.element.style.top = `${y}px`;
+        win.element.style.left = `${(desktopWidth - 320) / 2}px`;
+        win.element.style.top = `${(desktopHeight - 200) / 2}px`;
 
-        // Hide resize handle for alerts
         const resizeHandle = win.element.querySelector('.window-resize-handle');
         if (resizeHandle) resizeHandle.style.display = 'none';
 
         const confirmBtn = content.querySelector('.alert-confirm-btn');
         const cancelBtn = content.querySelector('.alert-cancel-btn');
-
         confirmBtn.focus();
 
         return new Promise((resolve) => {
-            confirmBtn.addEventListener('click', () => {
-                this.closeWindow(win);
-                resolve(true);
-            });
-            cancelBtn.addEventListener('click', () => {
-                this.closeWindow(win);
-                resolve(false);
-            });
+            confirmBtn.addEventListener('click', () => { this.closeWindow(win); resolve(true); });
+            cancelBtn.addEventListener('click', () => { this.closeWindow(win); resolve(false); });
         });
     }
 
@@ -547,10 +509,8 @@ export class WindowManager {
 
         const desktopWidth = this.desktop.clientWidth;
         const desktopHeight = this.desktop.clientHeight;
-        const x = (desktopWidth - 350) / 2;
-        const y = (desktopHeight - 200) / 2;
-        win.element.style.left = `${x}px`;
-        win.element.style.top = `${y}px`;
+        win.element.style.left = `${(desktopWidth - 350) / 2}px`;
+        win.element.style.top = `${(desktopHeight - 200) / 2}px`;
 
         const input = content.querySelector('.prompt-input');
         const confirmBtn = content.querySelector('.alert-confirm-btn');
@@ -569,10 +529,7 @@ export class WindowManager {
             confirmBtn.addEventListener('click', handleConfirm);
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') handleConfirm();
-                if (e.key === 'Escape') {
-                    this.closeWindow(win);
-                    resolve(null);
-                }
+                if (e.key === 'Escape') { this.closeWindow(win); resolve(null); }
             });
             cancelBtn.addEventListener('click', () => {
                 this.closeWindow(win);
