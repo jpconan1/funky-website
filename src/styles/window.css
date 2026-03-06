@@ -52,6 +52,19 @@
     touch-action: none;
 }
 
+/* Horizontal mode: sits above the window when it's pushed to the left edge */
+.window-scale-bar--horizontal {
+    flex-direction: row;
+    left: 10px;
+    top: -36px;
+    width: 150px;
+    height: 28px;
+    padding: 0 8px;
+    /* transform-origin: bottom left keeps the counter-scale anchor
+       at the window's top-left corner (same as the main window's 0 0 origin) */
+    transform-origin: bottom left;
+}
+
 .window-scale-label {
     font-size: 9px;
     font-family: var(--bios-font);
@@ -59,6 +72,12 @@
     margin-bottom: 6px;
     text-align: center;
     white-space: nowrap;
+}
+
+.window-scale-bar--horizontal .window-scale-label {
+    margin-bottom: 0;
+    margin-right: 6px;
+    line-height: 28px;
 }
 
 .window-scale-track {
@@ -69,6 +88,13 @@
     position: relative;
     cursor: ns-resize;
     margin-bottom: 2px;
+}
+
+.window-scale-bar--horizontal .window-scale-track {
+    width: auto;
+    height: 8px;
+    cursor: ew-resize;
+    margin-bottom: 0;
 }
 
 .window-scale-handle {
@@ -82,7 +108,16 @@
     top: 0%;
     border-radius: 3px;
     pointer-events: none;
-    transition: top 0.05s ease;
+    transition: top 0.05s ease, left 0.05s ease;
+}
+
+/* In horizontal mode: handle is taller-than-wide, moves left-right */
+.window-scale-bar--horizontal .window-scale-handle {
+    width: 10px;
+    height: 18px;
+    top: 50%;
+    left: 0%;
+    transform: translate(-50%, -50%);
 }
 
 

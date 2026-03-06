@@ -85,6 +85,8 @@ export class WindowManager {
 
         // Scale Control Setup
         this.setupScaleSlider(windowData);
+        // Set initial orientation based on spawn position
+        requestAnimationFrame(() => this.checkScaleBarOrientation(windowData));
 
         // Event Listeners
         const header = win.querySelector('.window-header');
@@ -174,45 +176,68 @@ export class WindowManager {
 
     setupScaleSlider(windowData) {
         const win = windowData.element;
+        const bar = win.querySelector('.window-scale-bar');
         const track = win.querySelector('.window-scale-track');
         const handle = win.querySelector('.window-scale-handle');
         const label = win.querySelector('.window-scale-label');
 
         const MIN_SCALE = 0.5;
         const MAX_SCALE = 2.0;
+        let isHorizontal = false;
 
         const updateUI = (scale) => {
             const percent = (scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
-            // Higher scale is at the TOP (percent 1.0 -> translateY 0%)
-            const yPercent = (1 - percent) * 100;
-            handle.style.top = `${yPercent}%`;
             label.textContent = `${Math.round(scale * 100)}%`;
+            if (isHorizontal) {
+                // Left = min scale, Right = max scale
+                const xPercent = percent * 100;
+                handle.style.left = `${xPercent}%`;
+                handle.style.top = '';
+            } else {
+                // Top = max scale, Bottom = min scale
+                const yPercent = (1 - percent) * 100;
+                handle.style.top = `${yPercent}%`;
+                handle.style.left = '';
+            }
         };
 
         // updateFromEvent must be defined BEFORE InputManager.attach calls it.
-        // Always use raw e.clientY vs raw rect — no manual scale correction needed
-        // because we're comparing two values both in the same screen-pixel space.
+        // Always compare raw clientX/Y against raw getBoundingClientRect values —
+        // both are in the same screen-pixel space, no scale correction needed.
         const updateFromEvent = (e) => {
             const rect = track.getBoundingClientRect();
-            if (rect.height === 0) return;
-
-            const relativeY = e.clientY - rect.top;
-            const percent = Math.max(0, Math.min(1, 1 - (relativeY / rect.height)));
+            let percent;
+            if (isHorizontal) {
+                if (rect.width === 0) return;
+                const relativeX = e.clientX - rect.left;
+                percent = Math.max(0, Math.min(1, relativeX / rect.width));
+            } else {
+                if (rect.height === 0) return;
+                const relativeY = e.clientY - rect.top;
+                percent = Math.max(0, Math.min(1, 1 - (relativeY / rect.height)));
+            }
             const newScale = MIN_SCALE + percent * (MAX_SCALE - MIN_SCALE);
             this.setWindowScale(windowData, newScale);
             updateUI(newScale);
+        };
+
+        // Called by checkScaleBarOrientation to flip the bar's layout.
+        windowData.setScaleBarHorizontal = (horizontal) => {
+            if (isHorizontal === horizontal) return;
+            isHorizontal = horizontal;
+            bar.classList.toggle('window-scale-bar--horizontal', horizontal);
+            // Re-draw handle at current scale
+            updateUI(windowData.scale || 1);
         };
 
         InputManager.attach(track, {
             owner: 'window-scale',
             onDown: (e) => {
                 this.focusWindow(windowData);
-                // Move handle immediately on tap — do NOT also update scale on bare tap
-                // to avoid a snap; only commit scale on intentional drag.
+                // Do NOT snap scale on bare tap — only on intentional drag.
                 return true;
             },
             onDragStart: (e) => {
-                // Suppress window-drag from competing
                 InputManager.lock('window-scale');
                 windowData.element.classList.add('window-zooming');
                 updateFromEvent(e);
@@ -228,6 +253,20 @@ export class WindowManager {
 
         // Initialize
         updateUI(windowData.scale || 1);
+    }
+
+    /**
+     * Checks whether the window's scale bar would clip off the left edge of the
+     * desktop. If so, flips the bar to horizontal (above window); otherwise keeps
+     * it vertical (left of window).
+     */
+    checkScaleBarOrientation(windowData) {
+        if (!windowData.setScaleBarHorizontal) return;
+        const desktopRect = this.desktop.getBoundingClientRect();
+        const winRect = windowData.element.getBoundingClientRect();
+        // Bar needs ~44px of clear space to the left of the window's screen edge.
+        const spaceLeft = winRect.left - desktopRect.left;
+        windowData.setScaleBarHorizontal(spaceLeft < 44);
     }
 
     setWindowScale(windowData, scale) {
@@ -303,6 +342,7 @@ export class WindowManager {
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
+            this.checkScaleBarOrientation(this.activeWindow);
         }
 
         if (this.isResizing) {
