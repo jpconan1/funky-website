@@ -26,10 +26,10 @@ export class Settings {
 
         // UI Scaling
         const currentScale = localStorage.getItem('ui-scale') || '1';
-        const scaleGroup = UI.createRadioGroup('UI Scale (Better for Mobile)', [
-            { label: '1x (Default)', value: '1' },
+        const scaleGroup = UI.createRadioGroup('UI Scale', [
+            { label: '1x (Standard)', value: '1' },
             { label: '1.5x (Large)', value: '1.5' },
-            { label: '2x (Enormous)', value: '2' }
+            { label: '2x (Mobile Default)', value: '2' }
         ], 'ui-scale', currentScale, (val) => {
             document.documentElement.style.setProperty('--ui-scale', val);
             localStorage.setItem('ui-scale', val);

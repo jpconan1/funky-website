@@ -6,10 +6,10 @@ const app = document.querySelector('#app')
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 let savedScale = localStorage.getItem('ui-scale');
 
-if (!localStorage.getItem('ui-scale-initialized')) {
-  savedScale = isMobile ? '1.5' : '1';
+if (!localStorage.getItem('ui-scale-initialized-v2')) {
+  savedScale = isMobile ? '2' : '1';
   localStorage.setItem('ui-scale', savedScale);
-  localStorage.setItem('ui-scale-initialized', 'true');
+  localStorage.setItem('ui-scale-initialized-v2', 'true');
 }
 
 document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
