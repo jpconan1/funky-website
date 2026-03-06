@@ -41,23 +41,24 @@ export class WindowManager {
         win.style.top = `${y}px`;
 
         win.innerHTML = `
-            <div class="window-header">
-                <div class="window-title-bar">
-                    <div class="window-controls">
-                        <button class="window-close-btn" title="Close"></button>
+            <div class="window-scale-bar" title="Zoom Window">
+                <div class="window-scale-label">100%</div>
+                <div class="window-scale-track">
+                    <div class="window-scale-handle"></div>
+                </div>
+            </div>
+            <div class="window-body">
+                <div class="window-header">
+                    <div class="window-title-bar">
+                        <div class="window-controls">
+                            <button class="window-close-btn" title="Close"></button>
+                        </div>
+                        <span class="window-title">${title}</span>
                     </div>
-                    <span class="window-title">${title}</span>
                 </div>
+                <div class="window-content"></div>
+                <div class="window-resize-handle"></div>
             </div>
-            <div class="window-content"></div>
-            <div class="window-footer">
-                <div class="window-zoom-container">
-                    <span class="window-zoom-label">Window Zoom</span>
-                    <input type="range" class="window-zoom-slider" min="0.3" max="2.0" step="0.01" value="1.0">
-                    <span class="window-zoom-value">100%</span>
-                </div>
-            </div>
-            <div class="window-resize-handle" title="Resize"></div>
         `;
 
         const contentArea = win.querySelector('.window-content');
@@ -73,7 +74,6 @@ export class WindowManager {
             id,
             element: win,
             title,
-            scale: 1,
             setTitle: (newTitle) => {
                 windowData.title = newTitle;
                 const titleSpan = win.querySelector('.window-title');
@@ -83,14 +83,13 @@ export class WindowManager {
 
         this.windows.push(windowData);
 
-        // Pinch-to-zoom setup (Backup gesture)
-        this.setupPinchToZoom(windowData);
+        // Scale Control Setup
+        this.setupScaleSlider(windowData);
 
         // Event Listeners
         const header = win.querySelector('.window-header');
         const closeBtn = win.querySelector('.window-close-btn');
         const resizeHandle = win.querySelector('.window-resize-handle');
-        const zoomSlider = win.querySelector('.window-zoom-slider');
 
         // Drag Handler
         InputManager.attach(header, {
@@ -98,36 +97,14 @@ export class WindowManager {
             capture: true,
             onDown: (e) => {
                 this.focusWindow(windowData);
-                const globalScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+                // rect is in screen space. e.clientX is in screen space.
                 const rect = windowData.element.getBoundingClientRect();
-
-                // appMouse is e.clientX divided by globalScale
-                const appMouseX = e.clientX / globalScale;
-                const appMouseY = e.clientY / globalScale;
-
-                // Get current window top-left in App space
-                const appWinX = rect.left / globalScale;
-                const appWinY = rect.top / globalScale;
-
                 this.dragOffset = {
-                    x: (appMouseX - appWinX) / windowData.scale,
-                    y: (appMouseY - appWinY) / windowData.scale
+                    x: (e.clientX - rect.left) / scale,
+                    y: (e.clientY - rect.top) / scale
                 };
                 return true;
-            },
-            onDoubleTap: () => {
-                // "Fit to Screen" shortcut
-                const desktopWidth = this.desktop.clientWidth;
-                const padding = 20;
-                const targetWidth = desktopWidth - padding;
-                const currentWidth = windowData.element.offsetWidth;
-                const fitScale = targetWidth / currentWidth;
-
-                this.setWindowScale(windowData, Math.min(fitScale, 1.0));
-
-                // Center horizontally
-                const finalScale = windowData.scale;
-                windowData.element.style.left = `${(desktopWidth - (currentWidth * finalScale)) / 2}px`;
             },
             onDragStart: (e, coords) => {
                 if (InputManager.lock('window-drag')) {
@@ -168,13 +145,12 @@ export class WindowManager {
                 this.focusWindow(windowData);
 
                 this.activeWindow = windowData;
-                const globalScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
-
+                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
                 this.resizeStart = {
                     width: windowData.element.offsetWidth,
                     height: windowData.element.offsetHeight,
-                    x: e.clientX / globalScale,
-                    y: e.clientY / globalScale
+                    x: e.clientX / scale,
+                    y: e.clientY / scale
                 };
                 return true;
             },
@@ -193,109 +169,65 @@ export class WindowManager {
             }
         });
 
-        // Zoom Slider Handler
-        zoomSlider.addEventListener('input', (e) => {
-            this.setWindowScale(windowData, parseFloat(e.target.value));
-        });
-
         return windowData;
     }
 
-    setupPinchToZoom(windowData) {
-        let activePointers = new Map();
-        let initialDistance = 0;
-        let initialScale = 1;
+    setupScaleSlider(windowData) {
         const win = windowData.element;
+        const track = win.querySelector('.window-scale-track');
+        const handle = win.querySelector('.window-scale-handle');
+        const label = win.querySelector('.window-scale-label');
 
-        const onPointerDown = (e) => {
-            if (e.pointerType !== 'touch') return;
+        const MIN_SCALE = 0.5;
+        const MAX_SCALE = 2.0;
 
-            // Start listening globally for this window's interaction
-            if (activePointers.size === 0) {
-                window.addEventListener('pointermove', onPointerMove, { passive: false });
-                window.addEventListener('pointerup', onPointerUp);
-                window.addEventListener('pointercancel', onPointerUp);
-            }
-
-            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-            if (activePointers.size === 2) {
-                const pointers = Array.from(activePointers.values());
-                initialDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
-                initialScale = windowData.scale || 1;
-
-                // Cancel any ongoing drag/resize on this window
-                if (this.activeWindow === windowData) {
-                    this.isDragging = false;
-                    this.isResizing = false;
-                    win.classList.remove('window-moving', 'window-resizing');
-                    InputManager.unlock('window-drag');
-                    InputManager.unlock('window-resize');
-                }
-
-                // Use top-left origin for predictable positioning while scaling
-                win.style.transformOrigin = '0 0';
-                win.classList.add('window-zooming');
-
-                // Prevent scrolling while pinching
-                if (e.cancelable) e.preventDefault();
-            }
+        const updateUI = (scale) => {
+            const percent = (scale - MIN_SCALE) / (MAX_SCALE - MIN_SCALE);
+            // Higher scale is at the TOP (percent 1.0 -> translateY 0%)
+            const yPercent = (1 - percent) * 100;
+            handle.style.top = `${yPercent}%`;
+            label.textContent = `${Math.round(scale * 100)}%`;
         };
 
-        const onPointerMove = (e) => {
-            if (!activePointers.has(e.pointerId)) return;
-            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        // updateFromEvent must be defined BEFORE InputManager.attach calls it.
+        // Always use raw e.clientY vs raw rect — no manual scale correction needed
+        // because we're comparing two values both in the same screen-pixel space.
+        const updateFromEvent = (e) => {
+            const rect = track.getBoundingClientRect();
+            if (rect.height === 0) return;
 
-            if (activePointers.size === 2) {
-                const pointers = Array.from(activePointers.values());
-                const currentDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
-
-                if (initialDistance > 0) {
-                    const deltaScale = currentDistance / initialDistance;
-                    this.setWindowScale(windowData, initialScale * deltaScale);
-                }
-
-                // Important to prevent platform zoom/scroll during our custom pinch
-                if (e.cancelable) e.preventDefault();
-            }
+            const relativeY = e.clientY - rect.top;
+            const percent = Math.max(0, Math.min(1, 1 - (relativeY / rect.height)));
+            const newScale = MIN_SCALE + percent * (MAX_SCALE - MIN_SCALE);
+            this.setWindowScale(windowData, newScale);
+            updateUI(newScale);
         };
 
-        const onPointerUp = (e) => {
-            if (activePointers.has(e.pointerId)) {
-                activePointers.delete(e.pointerId);
-
-                // Clean up global listeners when no fingers are touching this window
-                if (activePointers.size === 0) {
-                    window.removeEventListener('pointermove', onPointerMove);
-                    window.removeEventListener('pointerup', onPointerUp);
-                    window.removeEventListener('pointercancel', onPointerUp);
-                }
-
-                if (activePointers.size < 2) {
-                    win.classList.remove('window-zooming');
-                }
+        InputManager.attach(track, {
+            owner: 'window-scale',
+            onDown: (e) => {
+                this.focusWindow(windowData);
+                // Move handle immediately on tap — do NOT also update scale on bare tap
+                // to avoid a snap; only commit scale on intentional drag.
+                return true;
+            },
+            onDragStart: (e) => {
+                // Suppress window-drag from competing
+                InputManager.lock('window-scale');
+                windowData.element.classList.add('window-zooming');
+                updateFromEvent(e);
+            },
+            onDrag: (e) => {
+                updateFromEvent(e);
+            },
+            onDragEnd: () => {
+                windowData.element.classList.remove('window-zooming');
+                InputManager.unlock('window-scale');
             }
-        };
+        });
 
-        win.addEventListener('pointerdown', onPointerDown);
-
-        // Extra layer for iOS Safari: explicitly block gestures on the window
-        win.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
-        win.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
-
-        // Also block touchstart for multi-touch to be extra sure
-        win.addEventListener('touchstart', (e) => {
-            if (e.touches.length > 1) {
-                if (e.cancelable) e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Prevent browser zoom via trackpad (Ctrl + Wheel)
-        win.addEventListener('wheel', (e) => {
-            if (e.ctrlKey) {
-                if (e.cancelable) e.preventDefault();
-            }
-        }, { passive: false });
+        // Initialize
+        updateUI(windowData.scale || 1);
     }
 
     setWindowScale(windowData, scale) {
@@ -303,15 +235,10 @@ export class WindowManager {
         const clampedScale = Math.max(0.3, Math.min(scale, 2.0));
         windowData.scale = clampedScale;
 
-        // Apply transform directly.
+        // Apply transform directly using origin consistent with viewport conservation
+        windowData.element.style.setProperty('--win-scale', clampedScale);
         windowData.element.style.transform = `scale(${clampedScale})`;
-
-        // Sync the slider UI
-        const slider = windowData.element.querySelector('.window-zoom-slider');
-        if (slider) slider.value = clampedScale;
-
-        const valueDisplay = windowData.element.querySelector('.window-zoom-value');
-        if (valueDisplay) valueDisplay.textContent = `${Math.round(clampedScale * 100)}%`;
+        windowData.element.style.transformOrigin = '0 0';
 
         // Fire an event if other components need to know about the scale change
         windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clampedScale } }));
@@ -358,37 +285,32 @@ export class WindowManager {
     handlePointerMove(e, coords) {
         if (!this.activeWindow) return;
 
-        const windowScale = this.activeWindow.scale || 1;
-
         if (this.isDragging) {
-            // coords.x is already e.clientX / globalScale
-            let left = coords.x - (this.dragOffset.x * windowScale);
-            let top = coords.y - (this.dragOffset.y * windowScale);
+            let left = coords.x - this.dragOffset.x;
+            let top = coords.y - this.dragOffset.y;
 
-            // Constrain to viewport
+            // Constrain to viewport (optional, but usually good)
             const padding = 10;
             const desktopWidth = this.desktop.clientWidth;
             const desktopHeight = this.desktop.clientHeight;
+            const winScale = this.activeWindow.scale || 1;
 
-            // Scaled size in App space
-            const scaledWidth = this.activeWindow.element.offsetWidth * windowScale;
-            const scaledHeight = this.activeWindow.element.offsetHeight * windowScale;
+            const visualWidth = this.activeWindow.element.offsetWidth * winScale;
+            const visualHeight = this.activeWindow.element.offsetHeight * winScale;
 
-            left = Math.max(padding, Math.min(left, desktopWidth - scaledWidth - padding));
-            top = Math.max(padding, Math.min(top, desktopHeight - scaledHeight - padding));
+            left = Math.max(padding, Math.min(left, desktopWidth - visualWidth - padding));
+            top = Math.max(padding, Math.min(top, desktopHeight - visualHeight - padding));
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
         }
 
         if (this.isResizing) {
-            // coords.x/y are in app-space
-            const deltaX = (coords.x - this.resizeStart.x);
-            const deltaY = (coords.y - this.resizeStart.y);
+            const deltaX = coords.x - this.resizeStart.x;
+            const deltaY = coords.y - this.resizeStart.y;
 
-            // layoutWidth change = deltaAppX / windowScale
-            const newWidth = Math.max(200, this.resizeStart.width + (deltaX / windowScale));
-            const newHeight = Math.max(150, this.resizeStart.height + (deltaY / windowScale));
+            const newWidth = Math.max(200, this.resizeStart.width + deltaX);
+            const newHeight = Math.max(150, this.resizeStart.height + deltaY);
 
             this.activeWindow.element.style.width = `${newWidth}px`;
             this.activeWindow.element.style.height = `${newHeight}px`;

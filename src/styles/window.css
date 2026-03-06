@@ -11,11 +11,80 @@
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8),
         inset 0 0 0 1px rgba(238, 241, 219, 0.1);
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
+    /* Changed from hidden to allow slider on left */
     transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     animation: window-spawn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     touch-action: none;
 }
+
+/* Window Scale Side Bar
+   Fixed-pixel panel sitting just to the left of the window.
+   We do NOT counter-scale with CSS — instead the bar lives outside
+   the window's scale transform so it always renders at a stable size.
+   It is positioned with a negative left so it hugs the window's
+   top-left corner (transform-origin: 0 0) regardless of window scale.
+*/
+.window-scale-bar {
+    position: absolute;
+    left: -36px;
+    top: 10px;
+    width: 28px;
+    height: 150px;
+
+    /* Undo the parent window's scale so this bar is always screen-size-stable.
+       Because .window has transform-origin: 0 0 when scaling, we use
+       scale(1/winScale) with the same origin to keep it pinned to edge. */
+    transform: scale(calc(1 / var(--win-scale, 1)));
+    transform-origin: top right;
+
+    background: rgba(1, 48, 30, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(238, 241, 219, 0.3);
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    user-select: none;
+    touch-action: none;
+}
+
+.window-scale-label {
+    font-size: 9px;
+    font-family: var(--bios-font);
+    color: var(--bios-text);
+    margin-bottom: 6px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.window-scale-track {
+    width: 8px;
+    flex: 1;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    position: relative;
+    cursor: ns-resize;
+    margin-bottom: 2px;
+}
+
+.window-scale-handle {
+    width: 18px;
+    height: 10px;
+    background: var(--color-orange);
+    border: 1px solid var(--bios-text);
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0%;
+    border-radius: 3px;
+    pointer-events: none;
+    transition: top 0.05s ease;
+}
+
 
 @keyframes window-spawn {
     from {
@@ -49,8 +118,17 @@
     transition: none !important;
 }
 
-.window-header {
+/* CLIPPER FOR INNER CONTENT SINCE .WINDOW IS NOW OVERFLOW: VISIBLE */
+.window-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 8px;
+    height: 100%;
+}
 
+.window-header {
     height: 36px;
     background: rgba(238, 241, 219, 0.05);
     border-bottom: 1px solid rgba(238, 241, 219, 0.1);
@@ -151,61 +229,6 @@
 
 .window-resize-handle:hover {
     background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.6) 50%);
-}
-
-.window-footer {
-    height: 32px;
-    background: rgba(238, 241, 219, 0.05);
-    border-top: 1px solid rgba(238, 241, 219, 0.1);
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    flex-shrink: 0;
-    user-select: none;
-}
-
-.window-zoom-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-}
-
-.window-zoom-label {
-    font-size: 0.7rem;
-    color: var(--bios-text);
-    opacity: 0.6;
-    white-space: nowrap;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.window-zoom-slider {
-    flex: 1;
-    height: 4px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: rgba(238, 241, 219, 0.15);
-    border-radius: 2px;
-    outline: none;
-}
-
-.window-zoom-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px;
-    height: 14px;
-    background: var(--color-orange);
-    border-radius: 50%;
-    cursor: pointer;
-    border: 1px solid var(--color-creme);
-}
-
-.window-zoom-value {
-    font-family: var(--bios-font);
-    font-size: 0.7rem;
-    color: var(--color-orange);
-    min-width: 35px;
-    text-align: right;
 }
 
 .window-icon-grid {

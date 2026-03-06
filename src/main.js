@@ -14,15 +14,6 @@ if (!localStorage.getItem('ui-scale-initialized')) {
 
 document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
 
-// Prevent global browser zoom on iOS so it doesn't fight with our custom window scaling
-document.addEventListener('gesturestart', (e) => {
-  e.preventDefault();
-}, { passive: false });
-
-document.addEventListener('gesturechange', (e) => {
-  e.preventDefault();
-}, { passive: false });
-
 function addLine(text = '') {
   const line = document.createElement('div')
   line.className = 'line'
