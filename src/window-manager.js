@@ -126,6 +126,13 @@ class ZoomBar {
         this.el.style.top = `${top}px`;
     }
 
+    // Zero-latency version used while dragging — kills the CSS transition so the
+    // bar stays glued to the window with no chasing lag on mobile touch events.
+    snapReposition() {
+        this.el.style.transition = 'none';
+        this.reposition();
+    }
+
     _applyScale(val) {
         // Delegate back to WindowManager via the windowData reference.
         if (this.targetWindow && this.targetWindow._wmSetScale) {
@@ -310,8 +317,8 @@ export class WindowManager {
             }
         });
 
-        // Show zoom bar for this window on focus
-        this.focusWindow(windowData);
+        // Show the zoom bar — defer one frame so offsetWidth/Height are settled
+        requestAnimationFrame(() => this.focusWindow(windowData));
 
         return windowData;
     }
@@ -380,8 +387,8 @@ export class WindowManager {
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
 
-            // Reposition zoom bar in the same coordinate space — no maths needed
-            this.zoomBar.reposition();
+            // Snap the bar instantly while dragging — no CSS transition lag on mobile
+            this.zoomBar.snapReposition();
         }
 
         if (this.isResizing) {
@@ -393,7 +400,7 @@ export class WindowManager {
 
             this.activeWindow.element.style.width = `${newWidth}px`;
             this.activeWindow.element.style.height = `${newHeight}px`;
-            this.zoomBar.reposition();
+            this.zoomBar.snapReposition();
         }
     }
 
@@ -402,6 +409,8 @@ export class WindowManager {
             this.activeWindow.element.classList.remove('window-moving');
             this.activeWindow.element.classList.remove('window-resizing');
         }
+        // Re-enable smooth transition on the bar now that the drag has ended
+        this.zoomBar.el.style.transition = '';
         this.activeWindow = null;
         this.isDragging = false;
         this.isResizing = false;
