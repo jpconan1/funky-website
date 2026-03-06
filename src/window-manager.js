@@ -241,6 +241,24 @@ export class WindowManager {
         };
 
         win.addEventListener('pointerdown', onPointerDown);
+
+        // Extra layer for iOS Safari: explicitly block gestures on the window
+        win.addEventListener('gesturestart', (e) => e.preventDefault(), { passive: false });
+        win.addEventListener('gesturechange', (e) => e.preventDefault(), { passive: false });
+
+        // Also block touchstart for multi-touch to be extra sure
+        win.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent browser zoom via trackpad (Ctrl + Wheel)
+        win.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                if (e.cancelable) e.preventDefault();
+            }
+        }, { passive: false });
     }
 
     setWindowScale(windowData, scale) {
