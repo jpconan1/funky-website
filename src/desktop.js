@@ -5,12 +5,13 @@ import { TextEditor } from './text-editor.js';
 import { requireAdmin, isAdminSession } from './admin-auth.js';
 import { InputManager } from './input-manager.js';
 
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper, formatDate } from './supabase.js';
 import { Sailor } from './sailor.js';
-import { Synth } from './synth.js';
+import { FunkMaker3000 } from './funk-maker-3000.js';
 import { Paint } from './paint.js';
 import { ChessApp } from './chess.js';
 import { Settings } from './settings.js';
+import { StartMenu } from './start-menu.js';
 import { applyWallpaperToDesktop } from './paint.js';
 
 
@@ -83,10 +84,11 @@ export async function initDesktop() {
     const textEditor = new TextEditor(wm, () => loadGuestbookMessages(true));
 
     const paint = new Paint(wm, () => loadGuestbookMessages(true));
-    const synth = new Synth(wm, () => loadGuestbookMessages(true));
+    const funkMaker = new FunkMaker3000(wm);
     const sailor = new Sailor(wm);
     const chess = new ChessApp(wm, () => loadGuestbookMessages(true));
     const settings = new Settings(wm);
+    const startMenu = new StartMenu(wm);
 
     document.title = "Retro Desktop";
 
@@ -104,155 +106,30 @@ export async function initDesktop() {
     </div>
     <div id="taskbar" style="visibility: hidden">
       <div class="start-button"></div>
-      <div id="start-menu">
-        <div class="start-menu-content">
-          <h1 class="start-menu-welcome">Hi.</h1>
-          <div class="start-menu-main">
-            <div class="start-menu-left">
-              <p class="start-menu-intro">I’m JP Conan, and this is my website.</p>
-              <p class="start-menu-info">The files on the desktop are populated from a real folder on my computer, so you can see what I'm working on.</p>
-              <p class="start-menu-action">If you right click and press "New text file..." you can leave me (and any other visitors) a note! Please say hello!</p>
-            </div>
-            <div class="start-menu-right">
-              <div class="start-menu-item has-submenu" id="about-me-item">
-                <span>about me</span>
-                <span class="menu-arrow">▶</span>
-                <div class="submenu" id="about-submenu">
-                  <div class="submenu-content">
-                    <h2 class="submenu-header">What I Do</h2>
-                    <p>I write, design, draw (badly), make videos, produce audio, make indie games, cook and sing to my dog. I'm a creative generalist.</p>
-                    <p>During my 20s, I hiked across the US and traveled around my home country of Canada. I worked in kitchens, planted trees, and generally avoided growing up as long as possible. That got old, so now I’m back home, building a family and starting my career. I got married to the love of my life in December of 2025.</p>
-                    <p>I graduated from Red River College’s Creative Communications program, also in 2025, specializing in Advertising.</p>
-                    <p>I’m currently chasing down a new dream: Releasing a game on Steam. You can play an in-development version of my game Burger Joint right now - just click the icon on the desktop. and leave me some feedback, will you??</p>
-                    <img src="${new URL('./assets/start-menu/portrait.jpg', import.meta.url).href}" class="submenu-portrait" />
-                  </div>
-                </div>
-              </div>
-              <div class="start-menu-item has-submenu" id="client-work-item">
-                <span>client work</span>
-                <span class="menu-arrow">▶</span>
-                <div class="submenu" id="client-submenu">
-                  <div class="submenu-content">
-                    <h2 class="submenu-header">Client Work</h2>
-                    
-                    <div class="client-section">
-                      <h3 class="client-title">The Gates on Roblin</h3>
-                      <h4 class="client-subtitle">I work there as a Social Media Marketing Expert/dishwasher.</h4>
-                      <p class="client-copy">I conceived, shot and edited these videos in between my reguler dishie duties. The Gates puts on gorgeous events all the time, but doesn't have an in-house marketing team to show off our hard work. Everything falls to the GM, and he's a busy man, so I pitched this funky dual role and we've been making videos since.</p>
-                      <div class="instagram-container">
-                        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/reel/DPY2RwFESa8/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14"></blockquote>
-                        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/reel/DKp_LP2gCtz/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14"></blockquote>
-                      </div>
-                    </div>
-
-                    <div class="client-section">
-                      <h3 class="client-title">Geller's Design Build Landscape</h3>
-                      <h4 class="client-subtitle">My CreComm work placement</h4>
-                      <p class="client-copy">This is some of the work I did for Geller's during my last semester of school. I learned a lot there; I wrote SOPs, made videos and flew drones.</p>
-                      <p class="client-copy">I'm most proud of a small detail. My manager asked me to create a logo build for Geller's, something better than the simple wipe they were using before. I'd never opened After Effects, but I knew that's where I needed to go. I taught myself the basics in an hour and made a concept that worked in the next.</p>
-                      <p class="client-copy">You can see the logo build at the end of the power broom video and plenty of subsequent posts; they still use it to this day.</p>
-                      <div class="instagram-container">
-                        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/reel/DIe4Dtuooj3/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14"></blockquote>
-                        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/reel/DI4huYnik7E/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14"></blockquote>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div class="clock"></div>
     </div>
     </div>
   `;
 
-    const iconGrid = document.querySelector('#icon-grid');
     const taskbar = document.querySelector('#taskbar');
     const startButton = document.querySelector('.start-button');
-    const startMenu = document.querySelector('#start-menu');
+    taskbar.insertBefore(startMenu.render(), startButton.nextSibling);
+
+    const iconGrid = document.querySelector('#icon-grid');
     const bgVideo = document.querySelector('.desktop-bg-video');
     const desktop = document.querySelector('#desktop');
 
     initContextMenu(desktop, {
         newTextFile: () => textEditor.openNewFile(),
         newPaint: () => paint.openNewFile(),
-        newSynth: () => synth.openNewFile()
+        newFunkMaker: () => funkMaker.open()
     });
 
     // Fade in background video immediately since it's preloaded
     if (bgVideo) bgVideo.style.opacity = '0.6';
 
-    // Start Menu Logic
-    startButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const isVisible = startMenu.classList.toggle('visible');
-        startButton.classList.toggle('active');
-
-        if (isVisible && window.instgrm) {
-            window.instgrm.Embeds.process();
-        }
-    });
-
-    // Load Instagram embed script
-    if (!document.getElementById('instagram-embed-script')) {
-        const script = document.createElement('script');
-        script.id = 'instagram-embed-script';
-        script.src = "//www.instagram.com/embed.js";
-        script.async = true;
-        document.body.appendChild(script);
-    }
-
-    // Submenu Positioning Clamping
-    const setupSubmenuClamping = () => {
-        const submenus = document.querySelectorAll('.has-submenu');
-        submenus.forEach(item => {
-            const submenu = item.querySelector('.submenu');
-            if (!submenu) return;
-
-            item.addEventListener('mouseenter', () => {
-                // Determine the taskbar edge
-                const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
-                const taskbarHeight = 45;
-                const buffer = 10;
-                const bottomLimit = window.innerHeight - (taskbarHeight * scale) - (buffer * scale);
-
-                // Reset position to measure
-                submenu.style.top = '';
-
-                // Set to block/hidden to measure size before it's visually shown by CSS :hover
-                submenu.style.display = 'block';
-                submenu.style.visibility = 'hidden';
-
-                const rect = submenu.getBoundingClientRect();
-
-                if (rect.bottom > bottomLimit) {
-                    const diff = (rect.bottom - bottomLimit) / scale;
-                    // Current CSS top is -48px. We subtract the difference to "climb" up.
-                    submenu.style.top = `calc(-48px - ${diff}px)`;
-                }
-
-                // Restore display/visibility so CSS transitions/hovers take over
-                submenu.style.display = '';
-                submenu.style.visibility = '';
-            });
-        });
-    };
-
-    setupSubmenuClamping();
-
-    startMenu.addEventListener('click', (e) => {
-        const submenuItem = e.target.closest('.has-submenu');
-        if (submenuItem) {
-            // Toggle the submenu on click (for touch)
-            const wasOpen = submenuItem.classList.contains('mobile-open');
-            // Close others
-            document.querySelectorAll('.has-submenu.mobile-open').forEach(el => el.classList.remove('mobile-open'));
-            if (!wasOpen) submenuItem.classList.add('mobile-open');
-        }
-        e.stopPropagation();
-    });
+    // Start Menu
+    startMenu.attach(startButton);
 
     // Physics Engine Setup
     const Engine = Matter.Engine,
@@ -474,9 +351,7 @@ export async function initDesktop() {
             document.querySelectorAll('.icon.selected').forEach(icon => icon.classList.remove('selected'));
         }
         if (!e.target.closest('.start-button') && !e.target.closest('#start-menu')) {
-            startButton.classList.remove('active');
-            startMenu.classList.remove('visible');
-            document.querySelectorAll('.has-submenu.mobile-open').forEach(el => el.classList.remove('mobile-open'));
+            startMenu.close();
         }
     });
 
@@ -573,6 +448,10 @@ export async function initDesktop() {
             return chess.open();
         }
 
+        if (file.type === 'funk_maker') {
+            return funkMaker.open();
+        }
+
         if (file.type === 'settings') {
             return settings.open();
         }
@@ -610,9 +489,12 @@ export async function initDesktop() {
                     <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;">
                         <img src="${imgSrc}" alt="${file.name}" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
                     </div>
-                    <div class="editor-footer" style="padding: 5px 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="editor-footer" style="padding: 10px 10px 5px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: flex-start; margin-top: 15px;">
                         <div style="font-family: var(--bios-font); font-size: 12px; color: var(--bios-text); opacity: 0.8;">
                             ${fromInfo}
+                        </div>
+                        <div style="font-family: var(--bios-font); font-size: 11px; color: var(--bios-text); opacity: 0.5; margin-top: 4px;">
+                            ${formatDate(file.createdAt)}
                         </div>
                     </div>
                 </div>
@@ -640,7 +522,7 @@ export async function initDesktop() {
         }
 
         if (ext === '.loop') {
-            return synth.open(file);
+            return funkMaker.open();
         }
 
         // 5. Generic Fallback
@@ -874,6 +756,15 @@ export async function initDesktop() {
             };
             const chessPos = getGridPosition(iconPairs.length);
             iconGrid.appendChild(createIcon(chessFile, chessPos.x, chessPos.y));
+
+            // Add Funk Maker 3000 icon
+            const fmFile = {
+                name: 'Funk Maker 3000',
+                extension: '.loop',
+                type: 'funk_maker'
+            };
+            const fmPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(fmFile, fmPos.x, fmPos.y));
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
@@ -920,6 +811,7 @@ export async function initDesktop() {
                     type: 'cloud_file',
                     content: msg.content,
                     fromName: msg.from_name,
+                    createdAt: msg.created_at,
                     isCloud: true
                 };
 

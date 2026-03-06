@@ -1,0 +1,69 @@
+{
+    "welcome": "Hi.",
+    "intro": "I’m JP Conan, and this is my website.",
+    "info": "The files on the desktop are populated from a real folder on my computer, so you can see what I'm working on.",
+    "action": "If you right click and press \"New text file...\" you can leave me (and any other visitors) a note! Please say hello!",
+    "items": [
+        {
+            "id": "about-me-item",
+            "label": "about me",
+            "submenu": {
+                "id": "about-submenu",
+                "header": "What I Do",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "text": "I write, design, draw (badly), make videos, produce audio, make indie games, cook and sing to my dog. I'm a creative generalist."
+                    },
+                    {
+                        "type": "paragraph",
+                        "text": "During my 20s, I hiked across the US and traveled around my home country of Canada. I worked in kitchens, planted trees, and generally avoided growing up as long as possible. That got old, so now I’m back home, building a family and starting my career. I got married to the love of my life in December of 2025."
+                    },
+                    {
+                        "type": "paragraph",
+                        "text": "I graduated from Red River College’s Creative Communications program, also in 2025, specializing in Advertising."
+                    },
+                    {
+                        "type": "paragraph",
+                        "text": "I’m currently chasing down a new dream: Releasing a game on Steam. You can play an in-development version of my game Burger Joint right now - just click the icon on the desktop. and leave me some feedback, will you??"
+                    },
+                    {
+                        "type": "image",
+                        "src": "./assets/start-menu/portrait.jpg",
+                        "class": "submenu-portrait"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "client-work-item",
+            "label": "client work",
+            "submenu": {
+                "id": "client-submenu",
+                "header": "Client Work",
+                "content": [
+                    {
+                        "type": "client-section",
+                        "title": "The Gates on Roblin",
+                        "subtitle": "I work there as a Social Media Marketing Expert/dishwasher.",
+                        "copy": "I conceived, shot and edited these videos in between my reguler dishie duties. The Gates puts on gorgeous events all the time, but doesn't have an in-house marketing team to show off our hard work. Everything falls to the GM, and he's a busy man, so I pitched this funky dual role and we've been making videos since.",
+                        "instagram": [
+                            "https://www.instagram.com/reel/DPY2RwFESa8/?utm_source=ig_embed&amp;utm_campaign=loading",
+                            "https://www.instagram.com/reel/DKp_LP2gCtz/?utm_source=ig_embed&amp;utm_campaign=loading"
+                        ]
+                    },
+                    {
+                        "type": "client-section",
+                        "title": "Geller's Design Build Landscape",
+                        "subtitle": "My CreComm work placement",
+                        "copy": "This is some of the work I did for Geller's during my last semester of school. I learned a lot there; I wrote SOPs, made videos and flew drones. I'm most proud of a small detail. My manager asked me to create a logo build for Geller's, something better than the simple wipe they were using before. I'd never opened After Effects, but I knew that's where I needed to go. I taught myself the basics in an hour and made a concept that worked in the next. You can see the logo build at the end of the power broom video and plenty of subsequent posts; they still use it to this day.",
+                        "instagram": [
+                            "https://www.instagram.com/reel/DIe4Dtuooj3/?utm_source=ig_embed&amp;utm_campaign=loading",
+                            "https://www.instagram.com/reel/DI4huYnik7E/?utm_source=ig_embed&amp;utm_campaign=loading"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

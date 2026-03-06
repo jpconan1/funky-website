@@ -92,6 +92,39 @@ export class Settings {
         content.appendChild(radioGroup);
         content.appendChild(textField);
         content.appendChild(checkbox2);
+
+        // Toolbar Demo
+        content.appendChild(UI.createSection('Toolbar Demo (jspaint-style)'));
+        const toolbar = UI.createToolbar(4);
+        const tools = [
+            { icon: '/public/apps/paint/images/classic/tools.png', title: 'Pencil', index: 6 },
+            { icon: '/public/apps/paint/images/classic/tools.png', title: 'Brush', index: 7 },
+            { icon: '/public/apps/paint/images/classic/tools.png', title: 'Eraser', index: 2 },
+            { icon: '/public/apps/paint/images/classic/tools.png', title: 'Fill', index: 3 }
+        ];
+
+        let selectedBtn = null;
+        tools.forEach((tool, i) => {
+            const btn = UI.createToolButton(null, tool.title, (e, b) => {
+                if (selectedBtn) selectedBtn.classList.remove('selected');
+                b.classList.add('selected');
+                selectedBtn = b;
+                console.log(`Tool selected: ${tool.title}`);
+            });
+
+            // For now, since I don't have individual icons easily accessible, 
+            // I'll use a placeholder or style it with a background if I could.
+            // But jspaint uses a spritesheet. I'll just put a letter for now or a generic icon.
+            btn.innerHTML = `<span style="font-weight: bold; font-family: sans-serif;">${tool.title[0]}</span>`;
+
+            if (i === 0) {
+                btn.classList.add('selected');
+                selectedBtn = btn;
+            }
+            toolbar.appendChild(btn);
+        });
+        content.appendChild(toolbar);
+
         content.appendChild(button);
         content.appendChild(filler);
 

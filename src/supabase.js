@@ -254,3 +254,18 @@ export async function getBinnedMessages() {
     }
     return data;
 }
+
+export function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+        const date = new Date(dateStr);
+        return new Intl.DateTimeFormat('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        }).format(date);
+    } catch (e) {
+        return '';
+    }
+}
+

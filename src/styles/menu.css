@@ -14,8 +14,7 @@
 
     width: 550px;
     max-height: calc((100dvh / var(--ui-scale)) - 60px);
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: visible;
     image-rendering: pixelated;
     pointer-events: auto;
 }
@@ -32,6 +31,7 @@
     padding: 10px;
     font-family: var(--desktop-font);
     color: var(--bios-text);
+    overflow: visible;
 }
 
 .start-menu-welcome {

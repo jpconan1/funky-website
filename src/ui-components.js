@@ -25,7 +25,7 @@ export const UI = {
         return container;
     },
 
-    createSlider(label, min, max, value, onChange) {
+    createSlider(label, min, max, value, onChange, step = 1) {
         const container = document.createElement('div');
         container.className = 'ui-field ui-slider-container';
 
@@ -47,16 +47,86 @@ export const UI = {
         slider.type = 'range';
         slider.min = min;
         slider.max = max;
+        slider.step = step;
         slider.value = value;
         slider.className = 'ui-slider';
 
         slider.addEventListener('input', (e) => {
-            valueDisplay.textContent = e.target.value;
+            let val = e.target.value;
+            // Round display value if it's a small step to avoid floating point nastiness
+            if (step < 1) {
+                val = parseFloat(val).toFixed(2);
+            }
+            valueDisplay.textContent = val;
             onChange(e.target.value);
         });
 
         container.appendChild(labelArea);
         container.appendChild(slider);
+        return container;
+    },
+
+    createKnob(label, min, max, value, onChange) {
+        const container = document.createElement('div');
+        container.className = 'ui-field ui-knob-container';
+
+        const labelEl = document.createElement('label');
+        labelEl.textContent = label;
+        labelEl.className = 'ui-label';
+        labelEl.style.textAlign = 'center';
+
+        const knobWrapper = document.createElement('div');
+        knobWrapper.className = 'ui-knob-wrapper';
+
+        const knob = document.createElement('div');
+        knob.className = 'ui-knob';
+
+        const indicator = document.createElement('div');
+        indicator.className = 'ui-knob-indicator';
+        knob.appendChild(indicator);
+
+        // Calculate rotation based on value
+        const updateRotation = (val) => {
+            const percent = (val - min) / (max - min);
+            const rotation = -135 + (percent * 270); // 270 degrees of rotation
+            knob.style.transform = `rotate(${rotation}deg)`;
+        };
+
+        updateRotation(value);
+
+        let isDragging = false;
+        let startY = 0;
+        let startVal = value;
+
+        knob.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startVal = parseFloat(value);
+            knob.setPointerCapture(e.pointerId);
+            knob.classList.add('dragging');
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            const deltaY = startY - e.clientY;
+            const range = max - min;
+            const sensitivity = range / 200; // 200px move = full range
+            let newVal = startVal + (deltaY * sensitivity);
+            newVal = Math.max(min, Math.min(max, newVal));
+
+            value = newVal;
+            updateRotation(newVal);
+            onChange(newVal);
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+            knob.classList.remove('dragging');
+        });
+
+        knobWrapper.appendChild(knob);
+        container.appendChild(labelEl);
+        container.appendChild(knobWrapper);
         return container;
     },
 
@@ -163,5 +233,40 @@ export const UI = {
 
         container.appendChild(header);
         return container;
+    },
+
+    createToolbar(columns = 2) {
+        const container = document.createElement('div');
+        container.className = 'ui-toolbar';
+        if (columns) {
+            container.style.display = 'grid';
+            container.style.gridTemplateColumns = `repeat(${columns}, auto)`;
+        }
+        return container;
+    },
+
+    createToolButton(iconSrc, title, onClick, options = {}) {
+        const button = document.createElement('button');
+        button.className = 'ui-tool-button';
+        if (title) button.title = title;
+        if (options.selected) button.classList.add('selected');
+
+        if (iconSrc) {
+            const icon = document.createElement('img');
+            icon.src = iconSrc;
+            icon.className = 'ui-tool-icon';
+            button.appendChild(icon);
+        }
+
+        button.addEventListener('click', (e) => {
+            if (options.toggle) {
+                // If it's a toggle in a group, we might want to handle it externally
+                // but basic toggle logic:
+                // button.classList.toggle('selected');
+            }
+            onClick(e, button);
+        });
+
+        return button;
     }
 };

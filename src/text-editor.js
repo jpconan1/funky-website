@@ -1,4 +1,4 @@
-import { saveMessage } from './supabase.js';
+import { saveMessage, formatDate } from './supabase.js';
 
 export class TextEditor {
     constructor(windowManager, onSaveSuccess = null) {
@@ -35,9 +35,12 @@ export class TextEditor {
                 <div class="editor-status" style="opacity: 0.5;">Read Only</div>
             </div>
             <div class="viewer-content-area" style="flex: 1; overflow-y: auto;">${bodyContent}</div>
-            <div class="editor-footer" style="padding: 5px 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div class="editor-footer" style="padding: 10px 10px 5px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: flex-start;">
                 <div style="font-family: var(--bios-font); font-size: 12px; color: var(--bios-text); opacity: 0.8;">
                     ${fromInfo}
+                </div>
+                <div style="font-family: var(--bios-font); font-size: 11px; color: var(--bios-text); opacity: 0.5; margin-top: 4px;">
+                    ${formatDate(file.createdAt)}
                 </div>
             </div>
         `;

@@ -17,9 +17,9 @@ export function initContextMenu(desktopElement, actions) {
             <span>New drawing (Paint)...</span>
         </div>
 
-        <div class="context-menu-item" id="menu-new-synth">
+        <div class="context-menu-item" id="menu-new-funk-maker">
             <span class="menu-icon">🎹</span>
-            <span>New song (broken)</span>
+            <span>Funk Maker 3000</span>
         </div>
     `;
 
@@ -81,9 +81,9 @@ export function initContextMenu(desktopElement, actions) {
         if (actions.newPaint) actions.newPaint();
     });
 
-    menu.querySelector('#menu-new-synth').addEventListener('click', (e) => {
+    menu.querySelector('#menu-new-funk-maker').addEventListener('click', (e) => {
         e.stopPropagation();
         menu.style.display = 'none';
-        if (actions.newSynth) actions.newSynth();
+        if (actions.newFunkMaker) actions.newFunkMaker();
     });
 }
