@@ -29,8 +29,18 @@ body {
 }
 
 #app.booting {
-    padding: 2rem;
+    padding: 0;
 }
+
+.boot-screen {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 2rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 
 /* CRT Scanline Effect */
 #app::before {

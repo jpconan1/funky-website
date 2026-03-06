@@ -37,9 +37,16 @@
     user-select: none;
     touch-action: none;
     box-sizing: border-box;
+    /* Hidden by default, only shown when title bar is touched */
+    opacity: 0;
+    pointer-events: none;
+    /* Smooth repositioning and smooth fade */
+    transition: left 0.06s linear, top 0.06s linear, opacity 0.3s ease;
+}
+
+.zoom-bar-overlay.visible {
+    opacity: 1;
     pointer-events: auto;
-    /* Smooth repositioning — suppressed during slider drag via JS */
-    transition: left 0.06s linear, top 0.06s linear;
 }
 
 /* Vertical mode — bar sits to the left of the window */

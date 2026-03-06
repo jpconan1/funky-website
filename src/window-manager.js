@@ -11,7 +11,7 @@ class ZoomBar {
         this.targetWindow = null; // windowData currently being tracked
 
         const MIN = 0.5;
-        const MAX = 1.0;
+        const MAX = 1.5;
 
         // ── Build one vertical and one horizontal slider ──────────────────────
         this.vSlider = UI.createVerticalSlider(MIN, MAX, 1.0, (val) => {
@@ -36,33 +36,58 @@ class ZoomBar {
         [this.vSlider, this.hSlider].forEach(wrapper => {
             const input = wrapper.querySelector('input[type="range"]');
             input.addEventListener('pointerdown', () => {
+                this.clearFadeTimer();
                 if (this.targetWindow) this.targetWindow.element.classList.add('window-zooming');
             });
             input.addEventListener('pointerup', () => {
+                this.startFadeTimer();
                 if (this.targetWindow) this.targetWindow.element.classList.remove('window-zooming');
             });
             input.addEventListener('pointercancel', () => {
+                this.startFadeTimer();
                 if (this.targetWindow) this.targetWindow.element.classList.remove('window-zooming');
             });
         });
 
+        this.fadeTimer = null;
+
         desktop.appendChild(this.el);
-        this.el.style.display = 'none'; // hidden until a window is focused
+        // Visibility is now controlled by CSS classes and opacity
+    }
+
+    // Explicitly show the zoom bar (e.g. when title bar is touched)
+    show() {
+        this.el.classList.add('visible');
+        this.startFadeTimer();
+    }
+
+    startFadeTimer() {
+        this.clearFadeTimer();
+        this.fadeTimer = setTimeout(() => {
+            this.el.classList.remove('visible');
+        }, 2000);
+    }
+
+    clearFadeTimer() {
+        if (this.fadeTimer) {
+            clearTimeout(this.fadeTimer);
+            this.fadeTimer = null;
+        }
     }
 
     // Called by WindowManager whenever a window is focused / moved / scaled.
+    // This tracks the window but doesn't necessarily show it.
     track(windowData) {
         this.targetWindow = windowData;
         const scale = windowData.scale || 1.0;
         this.vSlider.setValue(scale);
         this.hSlider.setValue(scale);
-        this.el.style.display = '';
         this.reposition();
     }
 
     hide() {
         this.targetWindow = null;
-        this.el.style.display = 'none';
+        this.el.classList.remove('visible');
     }
 
     // Call whenever the tracked window moves or the desktop resizes.
@@ -240,6 +265,8 @@ export class WindowManager {
             capture: true,
             onDown: (e) => {
                 this.focusWindow(windowData);
+                this.zoomBar.show(); // Trigger show when header is touched
+
                 const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
                 const rect = windowData.element.getBoundingClientRect();
                 this.dragOffset = {
@@ -333,7 +360,7 @@ export class WindowManager {
     }
 
     setWindowScale(windowData, scale) {
-        const clamped = Math.max(0.5, Math.min(scale, 1.0));
+        const clamped = Math.max(0.5, Math.min(scale, 1.5));
         windowData.scale = clamped;
 
         windowData.element.style.setProperty('--win-scale', clamped);

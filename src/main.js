@@ -14,12 +14,15 @@ if (!localStorage.getItem('ui-scale-initialized-v2')) {
 
 document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
 
+let bootScreenContainer = null;
+
 function addLine(text = '') {
   const line = document.createElement('div')
   line.className = 'line'
   line.textContent = text
-  app.appendChild(line)
-  app.scrollTop = app.scrollHeight
+  const target = bootScreenContainer || app
+  target.appendChild(line)
+  target.scrollTop = target.scrollHeight
   return line
 }
 
@@ -36,8 +39,13 @@ async function runBootSequence() {
   const { header, sequence } = bootConfig
   app.classList.add('booting')
 
+  // Create a container for boot content that handles its own scrolling
+  bootScreenContainer = document.createElement('div')
+  bootScreenContainer.className = 'boot-screen'
+  app.appendChild(bootScreenContainer)
+
   // Header with EPA logo from assets
-  app.innerHTML = `
+  bootScreenContainer.innerHTML = `
     <div class="logo-header">
       <div class="bios-info">
         <div class="line">${header.biosVersion}</div>
@@ -70,11 +78,15 @@ async function runBootSequence() {
         line.textContent = `${step.text}${step.target}${step.unit}`
         break
       case 'clear':
-        app.innerHTML = ''
+        bootScreenContainer.innerHTML = ''
         break
     }
   }
+
+  // Clean up boot screen and booting class
   app.classList.remove('booting')
+  app.innerHTML = ''
+  bootScreenContainer = null
 }
 
 import { initDesktop } from './desktop.js'
@@ -82,3 +94,4 @@ import { initDesktop } from './desktop.js'
 runBootSequence().then(() => {
   initDesktop()
 })
+
