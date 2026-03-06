@@ -224,17 +224,73 @@ export class WindowManager {
     }
 
     /**
-     * Checks whether the window's scale bar would clip off the left edge of the
-     * desktop. If so, flips the bar to horizontal (above window); otherwise keeps
-     * it vertical (left of window).
+     * Repositions the scale bar every time the window moves so it always stays
+     * inside the visible desktop area.
+     *
+     * Two modes:
+     *   Vertical   – bar sits to the LEFT of the window (default)
+     *   Horizontal – bar sits ABOVE the window (when the window's left side is
+     *                close to or past the desktop's left edge)
+     *
+     * In both modes we compute a clamped CSS offset (window-local coordinates,
+     * accounting for the window's own CSS scale) and write it to CSS custom
+     * properties so the bar follows the desktop edge smoothly.
      */
     checkScaleBarOrientation(windowData) {
         if (!windowData.setScaleBarHorizontal) return;
+
+        const bar = windowData.element.querySelector('.window-scale-bar');
+        if (!bar) return;
+
         const desktopRect = this.desktop.getBoundingClientRect();
         const winRect = windowData.element.getBoundingClientRect();
-        // Bar needs ~44px of clear space to the left of the window's screen edge.
-        const spaceLeft = winRect.left - desktopRect.left;
-        windowData.setScaleBarHorizontal(spaceLeft < 44);
+        const winScale = windowData.scale || 1;
+
+        // How much screen-space is available to the left of the window?
+        const spaceLeftScreen = winRect.left - desktopRect.left;
+
+        // Bar dimensions in screen space (bar counter-scales so it is always 40×170px on screen)
+        const BAR_W = 40;   // screen px
+        const BAR_H = 170;  // screen px
+        const H_BAR_W = 180; // horizontal bar width in screen px
+        const H_BAR_H = 40;  // horizontal bar height in screen px
+        const GAP = 6;       // gap from window edge in screen px
+
+        // Switch to horizontal mode if there isn't enough room on the left.
+        const useHorizontal = spaceLeftScreen < (BAR_W + GAP);
+        windowData.setScaleBarHorizontal(useHorizontal);
+
+        if (useHorizontal) {
+            // ── Horizontal bar (above window) ──
+            // Ideal: left edge of bar aligns with left edge of window (window-local 0).
+            // In screen space the bar's ideal left is winRect.left.
+            // Clamp so the bar's left never goes past the desktop's left edge.
+            const idealScreenLeft = winRect.left;
+            const clampedScreenLeft = Math.max(desktopRect.left, idealScreenLeft);
+
+            // Convert back to window-local coordinates (divide by winScale because
+            // the bar itself counter-scales, so setting CSS left in window-logical px
+            // puts it in the right place).
+            const localLeft = (clampedScreenLeft - winRect.left) / winScale;
+            const localTop = -(H_BAR_H + GAP) / winScale;
+
+            bar.style.setProperty('--scale-bar-left', `${localLeft}px`);
+            bar.style.setProperty('--scale-bar-top', `${localTop}px`);
+        } else {
+            // ── Vertical bar (left of window) ──
+            // Ideal: right edge of bar is flush against the window's left edge with a tiny gap.
+            // Ideal local left = -(BAR_W + GAP)
+            const idealLocalLeft = -(BAR_W + GAP) / winScale;
+
+            // Clamp: bar's screen left must not go past desktop left.
+            // Bar's screen left = winRect.left + idealLocalLeft * winScale
+            const barScreenLeft = winRect.left + idealLocalLeft * winScale;
+            const clampedBarScreenLeft = Math.max(desktopRect.left, barScreenLeft);
+            const clampedLocalLeft = (clampedBarScreenLeft - winRect.left) / winScale;
+
+            bar.style.setProperty('--scale-bar-left', `${clampedLocalLeft}px`);
+            bar.style.setProperty('--scale-bar-top', `${GAP / winScale}px`);
+        }
     }
 
     setWindowScale(windowData, scale) {
@@ -251,6 +307,9 @@ export class WindowManager {
         if (windowData.updateZoomSliders) {
             windowData.updateZoomSliders(clampedScale);
         }
+
+        // Re-run bar orientation after scale changes (bar counter-scale shifts its effective position)
+        this.checkScaleBarOrientation(windowData);
 
         // Fire an event if other components need to know about the scale change
         windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clampedScale } }));

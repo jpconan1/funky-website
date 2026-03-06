@@ -24,8 +24,10 @@
 */
 .window-scale-bar {
     position: absolute;
-    left: -46px;
-    top: 10px;
+    /* Position driven by JS via --scale-bar-left / --scale-bar-top so the bar
+       gracefully follows the desktop boundary as windows are dragged off-screen. */
+    left: var(--scale-bar-left, -46px);
+    top: var(--scale-bar-top, 10px);
     width: 40px;
     height: 170px;
 
@@ -48,13 +50,13 @@
     user-select: none;
     touch-action: none;
     box-sizing: border-box;
+    transition: left 0.05s linear, top 0.05s linear;
 }
 
-/* Horizontal mode: sits above the window when pushed to the left edge */
+/* Horizontal mode: sits above the window, clamped to desktop left edge */
 .window-scale-bar--horizontal {
     flex-direction: row;
-    left: 10px;
-    top: -44px;
+    /* left/top are driven by JS in both modes */
     width: 180px;
     height: 40px;
     padding: 4px 4px;
