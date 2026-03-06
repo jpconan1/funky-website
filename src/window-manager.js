@@ -75,6 +75,9 @@ export class WindowManager {
 
         this.windows.push(windowData);
 
+        // Pinch-to-zoom setup
+        this.setupPinchToZoom(windowData);
+
         // Event Listeners
         const header = win.querySelector('.window-header');
         const closeBtn = win.querySelector('.window-close-btn');
@@ -161,7 +164,99 @@ export class WindowManager {
         return windowData;
     }
 
+    setupPinchToZoom(windowData) {
+        let activePointers = new Map();
+        let initialDistance = 0;
+        let initialScale = 1;
+        const win = windowData.element;
+
+        const onPointerDown = (e) => {
+            if (e.pointerType !== 'touch') return;
+
+            // Start listening globally for this window's interaction
+            if (activePointers.size === 0) {
+                window.addEventListener('pointermove', onPointerMove, { passive: false });
+                window.addEventListener('pointerup', onPointerUp);
+                window.addEventListener('pointercancel', onPointerUp);
+            }
+
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (activePointers.size === 2) {
+                const pointers = Array.from(activePointers.values());
+                initialDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
+                initialScale = windowData.scale || 1;
+
+                // Cancel any ongoing drag/resize on this window
+                if (this.activeWindow === windowData) {
+                    this.isDragging = false;
+                    this.isResizing = false;
+                    win.classList.remove('window-moving', 'window-resizing');
+                    InputManager.unlock('window-drag');
+                    InputManager.unlock('window-resize');
+                }
+
+                // Use top-left origin for predictable positioning while scaling
+                win.style.transformOrigin = '0 0';
+                win.classList.add('window-zooming');
+
+                // Prevent scrolling while pinching
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        const onPointerMove = (e) => {
+            if (!activePointers.has(e.pointerId)) return;
+            activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (activePointers.size === 2) {
+                const pointers = Array.from(activePointers.values());
+                const currentDistance = Math.hypot(pointers[0].x - pointers[1].x, pointers[0].y - pointers[1].y);
+
+                if (initialDistance > 0) {
+                    const deltaScale = currentDistance / initialDistance;
+                    this.setWindowScale(windowData, initialScale * deltaScale);
+                }
+
+                // Important to prevent platform zoom/scroll during our custom pinch
+                if (e.cancelable) e.preventDefault();
+            }
+        };
+
+        const onPointerUp = (e) => {
+            if (activePointers.has(e.pointerId)) {
+                activePointers.delete(e.pointerId);
+
+                // Clean up global listeners when no fingers are touching this window
+                if (activePointers.size === 0) {
+                    window.removeEventListener('pointermove', onPointerMove);
+                    window.removeEventListener('pointerup', onPointerUp);
+                    window.removeEventListener('pointercancel', onPointerUp);
+                }
+
+                if (activePointers.size < 2) {
+                    win.classList.remove('window-zooming');
+                }
+            }
+        };
+
+        win.addEventListener('pointerdown', onPointerDown);
+    }
+
+    setWindowScale(windowData, scale) {
+        // Clamp scale to reasonable values (0.3x to 2.0x)
+        const clampedScale = Math.max(0.3, Math.min(scale, 2.0));
+        windowData.scale = clampedScale;
+
+        // Apply transform directly. We use top-left origin set in setupPinchToZoom
+        windowData.element.style.transform = `scale(${clampedScale})`;
+
+        // Fire an event if other components need to know about the scale change
+        windowData.element.dispatchEvent(new CustomEvent('window-scaled', { detail: { scale: clampedScale } }));
+    }
+
     focusWindow(windowData) {
+
         if (parseInt(windowData.element.style.zIndex) < this.highestZIndex) {
             windowData.element.style.zIndex = ++this.highestZIndex;
         }
