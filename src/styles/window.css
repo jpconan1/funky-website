@@ -87,34 +87,35 @@
     border-radius: 4px;
     position: relative;
     cursor: ns-resize;
-    margin-bottom: 2px;
+    margin: 8px 0;
 }
 
 .window-scale-bar--horizontal .window-scale-track {
     width: auto;
     height: 8px;
     cursor: ew-resize;
-    margin-bottom: 0;
+    margin: 0 8px;
 }
 
 .window-scale-handle {
-    width: 18px;
-    height: 10px;
+    width: 24px;
+    height: 16px;
     background: var(--color-orange);
-    border: 1px solid var(--bios-text);
+    border: 1.5px solid var(--bios-text);
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
     top: 0%;
-    border-radius: 3px;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
     pointer-events: none;
     transition: top 0.05s ease, left 0.05s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* In horizontal mode: handle is taller-than-wide, moves left-right */
 .window-scale-bar--horizontal .window-scale-handle {
-    width: 10px;
-    height: 18px;
+    width: 16px;
+    height: 24px;
     top: 50%;
     left: 0%;
     transform: translate(-50%, -50%);

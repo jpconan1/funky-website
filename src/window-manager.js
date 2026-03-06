@@ -182,7 +182,7 @@ export class WindowManager {
         const label = win.querySelector('.window-scale-label');
 
         const MIN_SCALE = 0.5;
-        const MAX_SCALE = 2.0;
+        const MAX_SCALE = 1.0;
         let isHorizontal = false;
 
         const updateUI = (scale) => {
@@ -270,8 +270,8 @@ export class WindowManager {
     }
 
     setWindowScale(windowData, scale) {
-        // Clamp scale to reasonable values (0.3x to 2.0x)
-        const clampedScale = Math.max(0.3, Math.min(scale, 2.0));
+        // Clamp scale to reasonable values (0.5x to 1.0x)
+        const clampedScale = Math.max(0.5, Math.min(scale, 1.0));
         windowData.scale = clampedScale;
 
         // Apply transform directly using origin consistent with viewport conservation
