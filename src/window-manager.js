@@ -50,7 +50,8 @@ export class WindowManager {
                 </div>
             </div>
             <div class="window-content"></div>
-            <div class="window-resize-handle"></div>
+            <div class="window-resize-handle" title="Resize"></div>
+            <div class="window-scale-handle" title="Zoom/Scale"></div>
         `;
 
         const contentArea = win.querySelector('.window-content');
@@ -66,6 +67,7 @@ export class WindowManager {
             id,
             element: win,
             title,
+            scale: 1,
             setTitle: (newTitle) => {
                 windowData.title = newTitle;
                 const titleSpan = win.querySelector('.window-title');
@@ -75,13 +77,14 @@ export class WindowManager {
 
         this.windows.push(windowData);
 
-        // Pinch-to-zoom setup
+        // Pinch-to-zoom setup (Backup gesture)
         this.setupPinchToZoom(windowData);
 
         // Event Listeners
         const header = win.querySelector('.window-header');
         const closeBtn = win.querySelector('.window-close-btn');
         const resizeHandle = win.querySelector('.window-resize-handle');
+        const scaleHandle = win.querySelector('.window-scale-handle');
 
         // Drag Handler
         InputManager.attach(header, {
@@ -90,13 +93,26 @@ export class WindowManager {
             onDown: (e) => {
                 this.focusWindow(windowData);
                 const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
-                // rect is in screen space. e.clientX is in screen space.
+                const windowScale = windowData.scale || 1;
                 const rect = windowData.element.getBoundingClientRect();
                 this.dragOffset = {
-                    x: (e.clientX - rect.left) / scale,
-                    y: (e.clientY - rect.top) / scale
+                    x: (e.clientX - rect.left) / (scale * windowScale),
+                    y: (e.clientY - rect.top) / (scale * windowScale)
                 };
                 return true;
+            },
+            onDoubleTap: () => {
+                // "Fit to Screen" shortcut
+                const desktopWidth = this.desktop.clientWidth;
+                const padding = 20;
+                const targetWidth = desktopWidth - padding;
+                const currentWidth = windowData.element.offsetWidth;
+                const fitScale = targetWidth / currentWidth;
+
+                this.setWindowScale(windowData, Math.min(fitScale, 1.0));
+
+                // Also center it
+                windowData.element.style.left = `${padding / 2}px`;
             },
             onDragStart: (e, coords) => {
                 if (InputManager.lock('window-drag')) {
@@ -138,11 +154,12 @@ export class WindowManager {
 
                 this.activeWindow = windowData;
                 const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+                const windowScale = windowData.scale || 1;
                 this.resizeStart = {
                     width: windowData.element.offsetWidth,
                     height: windowData.element.offsetHeight,
-                    x: e.clientX / scale,
-                    y: e.clientY / scale
+                    x: e.clientX / (scale * windowScale),
+                    y: e.clientY / (scale * windowScale)
                 };
                 return true;
             },
@@ -158,6 +175,43 @@ export class WindowManager {
             onDragEnd: () => {
                 this.handlePointerUp();
                 InputManager.unlock('window-resize');
+            }
+        });
+
+        // Manual Scale Handler (The "Hero" Feature for Mobile)
+        let scaleStart = 0;
+        let scaleStartVal = 1;
+        InputManager.attach(scaleHandle, {
+            owner: 'window-scale-manual',
+            capture: true,
+            onDown: (e) => {
+                e.stopPropagation();
+                this.focusWindow(windowData);
+                this.activeWindow = windowData;
+                scaleStart = e.clientX;
+                scaleStartVal = windowData.scale || 1;
+                return true;
+            },
+            onDoubleTap: () => {
+                // Reset to 1.0
+                this.setWindowScale(windowData, 1.0);
+            },
+            onDragStart: () => {
+                if (InputManager.lock('window-scale-manual')) {
+                    win.classList.add('window-zooming');
+                    win.style.transformOrigin = '0 0';
+                }
+            },
+            onDrag: (e) => {
+                const deltaX = e.clientX - scaleStart;
+                const sens = 0.005; // Scaling sensitivity
+                const newScale = scaleStartVal + (deltaX * sens);
+                this.setWindowScale(windowData, newScale);
+            },
+            onDragEnd: () => {
+                win.classList.remove('window-zooming');
+                InputManager.unlock('window-scale-manual');
+                this.activeWindow = null;
             }
         });
 
@@ -314,24 +368,33 @@ export class WindowManager {
     handlePointerMove(e, coords) {
         if (!this.activeWindow) return;
 
-        if (this.isDragging) {
-            let left = coords.x - this.dragOffset.x;
-            let top = coords.y - this.dragOffset.y;
+        const globalScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+        const windowScale = this.activeWindow.scale || 1;
+        const combinedScale = globalScale * windowScale;
 
-            // Constrain to viewport (optional, but usually good)
+        if (this.isDragging) {
+            let left = (coords.x * globalScale) - (this.dragOffset.x * combinedScale);
+            let top = (coords.y * globalScale) - (this.dragOffset.y * combinedScale);
+
+            // Constrain to viewport
             const padding = 10;
             const desktopWidth = this.desktop.clientWidth;
             const desktopHeight = this.desktop.clientHeight;
-            left = Math.max(padding, Math.min(left, desktopWidth - this.activeWindow.element.offsetWidth - padding));
-            top = Math.max(padding, Math.min(top, desktopHeight - this.activeWindow.element.offsetHeight - padding));
+
+            // Adjust bounds check for scale
+            const scaledWidth = this.activeWindow.element.offsetWidth * windowScale;
+            const scaledHeight = this.activeWindow.element.offsetHeight * windowScale;
+
+            left = Math.max(padding, Math.min(left, desktopWidth - scaledWidth - padding));
+            top = Math.max(padding, Math.min(top, desktopHeight - scaledHeight - padding));
 
             this.activeWindow.element.style.left = `${left}px`;
             this.activeWindow.element.style.top = `${top}px`;
         }
 
         if (this.isResizing) {
-            const deltaX = coords.x - this.resizeStart.x;
-            const deltaY = coords.y - this.resizeStart.y;
+            const deltaX = (coords.x - this.resizeStart.x);
+            const deltaY = (coords.y - this.resizeStart.y);
 
             const newWidth = Math.max(200, this.resizeStart.width + deltaX);
             const newHeight = Math.max(150, this.resizeStart.height + deltaY);

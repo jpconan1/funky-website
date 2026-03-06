@@ -153,6 +153,22 @@
     background: linear-gradient(135deg, transparent 50%, rgba(238, 241, 219, 0.6) 50%);
 }
 
+.window-scale-handle {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 20px;
+    height: 20px;
+    cursor: sw-resize;
+    background: linear-gradient(225deg, transparent 50%, rgba(234, 70, 29, 0.5) 50%);
+    z-index: 10;
+    touch-action: none;
+}
+
+.window-scale-handle:hover {
+    background: linear-gradient(225deg, transparent 50%, rgba(234, 70, 29, 0.8) 50%);
+}
+
 .window-icon-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, 100px);
