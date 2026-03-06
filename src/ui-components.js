@@ -1,27 +1,15 @@
-/**
- * Prevent Safari's back/forward swipe gesture from firing while the user
- * is dragging a slider. Safari does NOT honour `touch-action: none` on
- * range inputs, so we must attach a *non-passive* touchmove listener and
- * call preventDefault() ourselves.
- *
- * @param {HTMLInputElement} sliderEl  The <input type="range"> element.
- */
 function _preventSwipeNav(sliderEl) {
-    // touchstart must also be non-passive so the subsequent touchmove can
-    // be cancelled (Chrome/Safari require the first event in the chain to
-    // be cancelable for the rest to be cancellable too).
+    // We must NOT call preventDefault() here or we block the native 
+    // range-slider logic (the thumb won't move). 
+    // Instead, we use stopPropagation to prevent the touch from bubbles 
+    // up to the desktop physics/scroll layers.
     sliderEl.addEventListener('touchstart', (e) => {
-        // Stop propagation prevents parent elements from seeing the touch and 
-        // potentially starting a scroll/swipe.
         e.stopPropagation();
-    }, { passive: false });
+    }, { passive: true }); // Passive is fine if we aren't calling preventDefault
 
     sliderEl.addEventListener('touchmove', (e) => {
-        // e.preventDefault() blocks the browser's default touch actions 
-        // (like scrolling or history navigation).
-        e.preventDefault();
         e.stopPropagation();
-    }, { passive: false });
+    }, { passive: true });
 }
 
 export const UI = {
