@@ -11,16 +11,15 @@ function _preventSwipeNav(sliderEl) {
     // be cancelled (Chrome/Safari require the first event in the chain to
     // be cancelable for the rest to be cancellable too).
     sliderEl.addEventListener('touchstart', (e) => {
-        // Only prevent default for horizontal swipes on vertical sliders and
-        // horizontal drags in general — we still want vertical scroll to work
-        // on purely vertical sliders if the user's gesture is vertical, but
-        // for simplicity preventing all default on the slider element is safe
-        // because the slider itself handles the interaction.
+        // Stop propagation prevents parent elements from seeing the touch and 
+        // potentially starting a scroll/swipe.
         e.stopPropagation();
     }, { passive: false });
 
     sliderEl.addEventListener('touchmove', (e) => {
-        e.preventDefault();   // ← blocks Safari back/forward swipe
+        // e.preventDefault() blocks the browser's default touch actions 
+        // (like scrolling or history navigation).
+        e.preventDefault();
         e.stopPropagation();
     }, { passive: false });
 }
@@ -42,6 +41,8 @@ export const UI = {
     createVerticalSlider(min, max, value, onChange, step = 0.01) {
         const wrapper = document.createElement('div');
         wrapper.className = 'ui-vslider-wrapper';
+        wrapper.style.touchAction = 'none'; // Block at wrapper level
+        _preventSwipeNav(wrapper); // Also block on the wrapper itself!
 
         const label = document.createElement('span');
         label.className = 'ui-vslider-label';
@@ -85,6 +86,8 @@ export const UI = {
     createHorizontalZoomSlider(min, max, value, onChange, step = 0.01) {
         const wrapper = document.createElement('div');
         wrapper.className = 'ui-hslider-wrapper';
+        wrapper.style.touchAction = 'none';
+        _preventSwipeNav(wrapper);
 
         const label = document.createElement('span');
         label.className = 'ui-hslider-label';
@@ -147,6 +150,8 @@ export const UI = {
     createSlider(label, min, max, value, onChange, step = 1) {
         const container = document.createElement('div');
         container.className = 'ui-field ui-slider-container';
+        container.style.touchAction = 'none';
+        _preventSwipeNav(container);
 
         const labelArea = document.createElement('div');
         labelArea.className = 'ui-label-area';

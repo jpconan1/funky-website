@@ -68,23 +68,23 @@
 .ui-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     background: var(--color-orange);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
-    border: 2px solid var(--color-creme);
+    box-shadow: 0 0 12px rgba(234, 70, 29, 0.5);
+    border: 2.5px solid var(--color-creme);
 }
 
 .ui-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     background: var(--color-orange);
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
-    border: 2px solid var(--color-creme);
+    box-shadow: 0 0 12px rgba(234, 70, 29, 0.5);
+    border: 2.5px solid var(--color-creme);
 }
 
 /* Knob */
@@ -401,13 +401,13 @@
 .ui-vslider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     background: var(--color-orange);
-    border: 2.5px solid var(--color-creme);
-    border-radius: 6px;
+    border: 3px solid var(--color-creme);
+    border-radius: 8px;
     cursor: ns-resize;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
     transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
@@ -417,13 +417,13 @@
 }
 
 .ui-vslider::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     background: var(--color-orange);
-    border: 2.5px solid var(--color-creme);
-    border-radius: 6px;
+    border: 3px solid var(--color-creme);
+    border-radius: 8px;
     cursor: ns-resize;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Horizontal Zoom Slider ────────────────────────────────────────────── */
@@ -463,13 +463,13 @@
 .ui-hslider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     background: var(--color-orange);
-    border: 2.5px solid var(--color-creme);
-    border-radius: 6px;
+    border: 3px solid var(--color-creme);
+    border-radius: 8px;
     cursor: ew-resize;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
     transition: transform 0.08s ease, box-shadow 0.08s ease;
 }
 
@@ -479,11 +479,11 @@
 }
 
 .ui-hslider::-moz-range-thumb {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     background: var(--color-orange);
-    border: 2.5px solid var(--color-creme);
-    border-radius: 6px;
+    border: 3px solid var(--color-creme);
+    border-radius: 8px;
     cursor: ew-resize;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
 }

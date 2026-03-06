@@ -29,6 +29,7 @@ class ZoomBar {
         this.hSlider.style.display = 'none';
 
         // Suppress pointer events bubbling to the desktop physics layer
+        this.el.style.touchAction = 'none';
         this.el.addEventListener('pointerdown', e => e.stopPropagation());
 
         // Freeze window transition while dragging a slider

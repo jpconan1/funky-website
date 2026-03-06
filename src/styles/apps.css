@@ -496,8 +496,8 @@
 .rgb-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 10px;
-    height: 10px;
+    width: 13px;
+    height: 13px;
     background: var(--bios-text);
     border-radius: 50%;
     cursor: pointer;
@@ -966,8 +966,8 @@
 .bpm-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 10px;
-    height: 10px;
+    width: 13px;
+    height: 13px;
     background: #00ffca;
     border-radius: 50%;
     cursor: pointer;
@@ -999,8 +999,8 @@
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 10px;
-    height: 10px;
+    width: 13px;
+    height: 13px;
     background: #ff007a;
     border-radius: 50%;
     cursor: pointer;
