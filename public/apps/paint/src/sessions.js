@@ -1,7 +1,7 @@
 // @ts-check
 // eslint-disable-next-line no-unused-vars
 /* global file_name:writable */
-/* global $app, $canvas_area, localize, magnification, main_canvas, main_ctx, redos, undos */
+/* global $app, $canvas_area, localize, magnification, main_canvas, main_ctx, redos, undos, transparency */
 import { $DialogWindow } from "./$ToolWindow.js";
 // import { localize } from "./app-localization.js";
 import { change_url_param, get_uris, load_image_from_uri, open_from_image_info, redo, reset_file, show_error_message, show_resource_load_error_message, undo, undoable, update_title } from "./functions.js";
@@ -28,7 +28,7 @@ try {
 
 const match_threshold = 1; // 1 is just enough for a workaround for Brave browser's farbling: https://github.com/1j01/jspaint/issues/184
 const canvas_has_any_apparent_image_data = () =>
-	main_canvas.ctx.getImageData(0, 0, main_canvas.width, main_canvas.height).data.some((v) => v > match_threshold);
+	transparency || main_canvas.ctx.getImageData(0, 0, main_canvas.width, main_canvas.height).data.some((v) => v > match_threshold);
 
 let $recovery_window;
 function show_recovery_window(no_longer_blank) {

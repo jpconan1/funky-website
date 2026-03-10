@@ -635,7 +635,7 @@ function toggle_thumbnail() {
 
 function reset_selected_colors() {
 	selected_colors = {
-		foreground: "#000000",
+		foreground: "#eef1db",
 		background: "#ffffff",
 		ternary: "",
 	};
@@ -662,8 +662,10 @@ function reset_canvas_and_history() {
 	main_canvas.width = Math.max(1, my_canvas_width);
 	main_canvas.height = Math.max(1, my_canvas_height);
 	main_ctx.disable_image_smoothing();
-	main_ctx.fillStyle = selected_colors.background;
-	main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+	if (!transparency) {
+		main_ctx.fillStyle = selected_colors.background;
+		main_ctx.fillRect(0, 0, main_canvas.width, main_canvas.height);
+	}
 
 	current_history_node.image_data = main_ctx.getImageData(0, 0, main_canvas.width, main_canvas.height);
 
@@ -1056,8 +1058,8 @@ function apply_file_format_and_palette_info(info) {
 	if (info.palette) {
 		window.console?.log(`Loaded palette from image file: ${info.palette.map(() => "%c█").join("")}`, ...info.palette.map((color) => `color: ${color};`));
 		palette = info.palette;
-		selected_colors.foreground = palette[0];
-		selected_colors.background = palette.length === 14 * 2 ? palette[14] : palette[1]; // first in second row for default sized palette, else second color (debatable behavior; should it find a dark and a light color?)
+		selected_colors.foreground = "#eef1db";
+		selected_colors.background = "#fff"; // first in second row for default sized palette, else second color (debatable behavior; should it find a dark and a light color?)
 		$G.trigger("option-changed");
 	} else if (monochrome && !info.monochrome) {
 		palette = default_palette;

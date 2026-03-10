@@ -5,7 +5,7 @@ import { TextEditor } from './text-editor.js';
 import { requireAdmin, isAdminSession } from './admin-auth.js';
 import { InputManager } from './input-manager.js';
 
-import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper, formatDate } from './supabase.js';
+import { getMessages, binMessage, getBinnedMessages, deleteMessagePermanently, restoreMessage, subscribeToMessages, MEDIA_STAMP, stripStamp, getWallpaper, clearWallpaper, subscribeToWallpaper, formatDate } from './supabase.js';
 import { Sailor } from './sailor.js';
 import { FunkMaker3000 } from './funk-maker-3000.js';
 import { Paint } from './paint.js';
@@ -883,6 +883,12 @@ export async function initDesktop() {
     subscribeToWallpaper(({ value }) => {
         console.log('[Wallpaper] Realtime update received');
         applyWallpaperToDesktop(value || null);
+    });
+
+    // Subscribe to cloud file changes (new songs, deletions, etc.)
+    subscribeToMessages((payload) => {
+        console.log('[Cloud Files] Change detected:', payload.eventType);
+        loadGuestbookMessages(true);
     });
 
     // Show welcome alert

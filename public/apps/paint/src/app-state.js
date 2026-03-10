@@ -22,7 +22,7 @@ let my_canvas_width = 256;
 let my_canvas_height = 256;
 
 let aliasing = true;
-let transparency = false;
+let transparency = true;
 let monochrome = false;
 
 let magnification = default_magnification;

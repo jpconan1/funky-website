@@ -174,6 +174,29 @@ export async function getMessages() {
     return data;
 }
 
+/**
+ * Subscribe to realtime changes for the messages table.
+ * @param {function} callback - Called whenever a row is inserted, updated, or deleted.
+ * @returns {object} Supabase channel - call .unsubscribe() to clean up
+ */
+export function subscribeToMessages(callback) {
+    if (!supabase) return null;
+    return supabase
+        .channel('public:messages')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'messages'
+            },
+            (payload) => {
+                callback(payload);
+            }
+        )
+        .subscribe();
+}
+
 // ============================================================
 // SITE SETTINGS (wallpaper, future global state)
 // ============================================================

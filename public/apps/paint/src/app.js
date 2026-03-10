@@ -1274,8 +1274,10 @@ set_magnification(default_magnification);
 // detector doesn't fire before the localStore async callback fills it.
 main_canvas.width = 256;
 main_canvas.height = 256;
-main_ctx.fillStyle = "#ffffff";
-main_ctx.fillRect(0, 0, 256, 256);
+if (!transparency) {
+	main_ctx.fillStyle = "#ffffff";
+	main_ctx.fillRect(0, 0, 256, 256);
+}
 
 // this is synchronous for now, but @TODO: handle possibility of loading a document before callback
 // when switching to asynchronous storage, e.g. with localforage
@@ -1748,7 +1750,7 @@ $G.on("fullscreenchange webkitfullscreenchange", () => {
 // Note: this is defined here so the app is loaded when this is defined.
 window.api_for_cypress_tests = {
 	reset_for_next_test() {
-		selected_colors.foreground = "#000";
+		selected_colors.foreground = "#eef1db";
 		selected_colors.background = "#fff";
 		brush_shape = default_brush_shape;
 		brush_size = default_brush_size;

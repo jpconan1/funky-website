@@ -7,7 +7,12 @@
     --theme-loaded: "jp-os.css";
 
     /* Checker pattern using our green palette (dark/mid green squares) */
-    --checker: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAGklEQVQYV2M04GDxX7tgAQMjgwIDBv8JCRACAP7wBVRlyXhGAAAAAElFTkSuQmCC");
+    --checker: conic-gradient(
+        rgb(1, 12, 8) 90deg, 
+        rgb(1, 32, 20) 90deg 180deg, 
+        rgb(1, 12, 8) 180deg 270deg, 
+        rgb(1, 32, 20) 270deg
+    );
 
     /* Window title bar: deep green to accent green */
     --ActiveTitle: rgb(1, 48, 30);
@@ -99,5 +104,10 @@
 /* Canvas area gets our dark workspace tone */
 body,
 .canvas-area {
-    background: rgb(1, 25, 15);
+    background: rgb(1, 15, 10);
+}
+
+.canvas-area > canvas {
+    background-image: var(--checker);
+    background-size: 16px 16px;
 }
