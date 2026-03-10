@@ -1,0 +1,92 @@
+# FunkMaker3000 Workstation Evolution Plan
+
+## 1. Core Architecture: The Three-Tab System
+To accommodate the new timeline and recording features, the UI will be refactored into a tabbed workstation layout.
+
+- **TAB 1: TWEAK (The Synth)**
+  - Current FunkMaker 3000 interface.
+  - Focus: Sound design, oscillator tweaking, and global envelope settings.
+  - Action: "Snapshot" the current sound to be used in recordings.
+
+- **TAB 2: LOOP (The Recorder)**
+  - Logic: Collapses/hides oscillator rows to show a focused 1-4 measure grid.
+  - Performance: Captures live keyboard events (MIDI-style) with high-precision timestamps.
+  - **The Snap Logic:** Blocks are created on 1-measure boundaries, but note starts/ends are preserved exactly as played (non-quantized).
+  - **Cropping:** Any note held past the recording duration is cropped to fit the block.
+
+- **TAB 3: SONG (The Timeline)**
+  - A multi-track horizontal arrangement view.
+  - Drag-and-drop saved loops onto the timeline.
+  - Snaps to measures for easy structural building.
+
+---
+
+## 2. The Data Bundle (.funk)
+Every "Loop" created in FunkMaker will be a JSON object containing:
+- **Synth DNA:** A snapshot of all 30+ slider values at the time of recording.
+- **Performance Data:** An array of note events (pitch, start time, duration).
+- **Metadata:** Name (e.g., "Bass Slap 01"), Color, and Track ID.
+
+> [!NOTE]
+> This ensures that when the timeline plays back different blocks, the Synth UI can "jump" to the correct settings for that specific sound.
+
+---
+
+## 3. The "Trashy-Chic" Mic Integration
+Low-resolution vocal capture for "Vocal Pads."
+
+- **Technical Specs:**
+  - **Codec:** Opus (via MediaRecorder API).
+  - **Bitrate:** 12 - 24 kbps (Mono).
+  - **Aesthetic:** "Sampleresque" quality (low-fi, telephonic).
+- **Storage:** Saved as Base64 strings with `MEDIA_STAMP` for Supabase compatibility.
+- **Goal:** Keep 30-60 second clips well under the 1MB per-file limit.
+
+---
+
+## 4. Implementation Stages
+
+### Phase 1: Navigation & State
+- Implement the Tab bar across the top of the FunkMaker window.
+- Create the "Active Sound Snapshot" system to track the current synth state.
+
+### Phase 2: The Loop Recorder
+- Build the "Live Capture" engine.
+- Implement the "Metronome" and "Count-in" logic.
+- Basic save/load for `.funk` loop bundles.
+
+### Phase 3: The Timeline (Song)
+- Multi-track horizontal layout.
+- Measure-snapping drag/drop engine.
+- Global playback clock to trigger the loops in sync.
+
+### Phase 4: Vocal Pads
+- Browser permission request for Microphone.
+- Simple "Record" button on a dedicated Mic track.
+- Compression/Downsampling pipeline.
+
+---
+
+## 5. Scope & Out-Of-Scope
+
+> [!IMPORTANT]
+> **IN SCOPE**
+> - Measure-snapped timeline arrangement.
+> - Non-quantized note performance data.
+> - Synth parameter snapshots per loop.
+> - Low-res audio recording (Mic).
+> - Simple note cropping at block boundaries.
+
+> [!WARNING]
+> **OUT OF SCOPE (For Now)**
+> - **Automated Slider Grooves:** Capturing slider movements over time.
+> - **Pulsing UI:** Global CSS animations tied to BPM.
+> - **Cross-Fades:** Audio blending between blocks.
+> - **Infinite Tail:** Preservation of release tails beyond block boundaries.
+
+---
+
+## 6. Storage & Performance
+- **Note Data:** Negligible impact on DB limit (~100 bytes per 16-note loop).
+- **Vocal Data:** High compression ensures even a 5-minute song with several vocal clips fits within a single 1MB Supabase record.
+- **UI Performance:** Tabs will "hibernate" inactive views to prevent DOM lag (e.g., hiding 30+ sliders while in Timeline mode).

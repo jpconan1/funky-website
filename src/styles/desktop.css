@@ -192,6 +192,15 @@
     background-image: url('../assets/txt-boilsheet.png');
 }
 
+.icon-song {
+    background-image: url('../assets/song-idle.png');
+}
+
+.icon:hover .icon-song,
+.icon.selected .icon-song {
+    background-image: url('../assets/song-boilsheet.png');
+}
+
 .icon-folder {
     background-image: url('../assets/folder-idle.png');
 }

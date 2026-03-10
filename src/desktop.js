@@ -64,6 +64,8 @@ export async function initDesktop() {
         new URL('./assets/pdf-idle.png', import.meta.url).href,
         new URL('./assets/txt-boilsheet.png', import.meta.url).href,
         new URL('./assets/txt-idle.png', import.meta.url).href,
+        new URL('./assets/song-boilsheet.png', import.meta.url).href,
+        new URL('./assets/song-idle.png', import.meta.url).href,
         new URL('./assets/start-menu/start-box.png', import.meta.url).href,
         new URL('./assets/start-menu/start-hovered.png', import.meta.url).href,
         new URL('./assets/start-menu/start-idle.png', import.meta.url).href,
@@ -74,6 +76,7 @@ export async function initDesktop() {
         new URL('./assets/working-draft-icon.png', import.meta.url).href,
         new URL('./assets/chess-icon.png', import.meta.url).href,
         new URL('./assets/settings.png', import.meta.url).href,
+        new URL('./assets/funk-maker-3000.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -503,6 +506,34 @@ export async function initDesktop() {
             return;
         }
 
+        if (ext === '.loop' || ext === '.song') {
+            console.log(`[DEBUG] -> Branch: Funk Maker (${ext})`);
+
+            // 1. Fetch local content if needed
+            if (!file.isCloud && file.path && !file.content) {
+                try {
+                    const encodedPath = encodePath(file.path);
+                    const response = await fetch(`./desktop/${encodedPath}`);
+                    if (response.ok) {
+                        file.content = await response.text();
+                    }
+                } catch (error) {
+                    console.error('Error fetching song content:', error);
+                }
+            }
+
+            // 2. Parse song data
+            let songData = null;
+            if (file.content) {
+                try {
+                    songData = JSON.parse(stripStamp(file.content));
+                } catch (e) {
+                    console.error("Failed to parse song data:", e);
+                }
+            }
+            return funkMaker.open(songData, { fromName: file.fromName });
+        }
+
         // 4. Text / Cloud File fallback (TextEditor)
         if (ext === '.txt' || file.isCloud) {
             console.log(`[DEBUG] -> Branch: Text Editor`);
@@ -519,10 +550,6 @@ export async function initDesktop() {
                 }
             }
             return textEditor.open(file);
-        }
-
-        if (ext === '.loop') {
-            return funkMaker.open();
         }
 
         // 5. Generic Fallback
@@ -838,6 +865,7 @@ export async function initDesktop() {
 
     // Play startup chime
     const chime = new Audio('/chime.wav');
+    chime.volume = 0.5;
     chime.play().catch(e => console.log('Startup chime blocked:', e));
 
     // --- Global Wallpaper: load current + subscribe to realtime changes ---
@@ -900,6 +928,9 @@ export function getIconSymbol(file) {
     if (file.type === 'settings') {
         return `<div class="sprite" style="background-image: url('${new URL('./assets/settings.png', import.meta.url).href}'); --frames: 1;"></div>`;
     }
+    if (file.type === 'funk_maker') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/funk-maker-3000.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
     if (file.type === 'video') {
         return `<div class="sprite" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI0IiB5PSIxMiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0ZGMDAwMCIgLz48cGF0aCBkPSJNMjYgMjJMIDQyIDMyTDI2IDQyVjIyWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+'); --frames: 1;"></div>`;
     }
@@ -908,6 +939,6 @@ export function getIconSymbol(file) {
     if (ext === '.pdf') return getSpriteHTML('icon-pdf');
     if (ext === '.png' || ext === '.jpg' || ext === '.jpeg' || ext === '.draw') return getSpriteHTML('icon-img');
     if (ext === '.txt') return getSpriteHTML('icon-txt');
-    if (ext === '.loop') return '🎹'; // Use an emoji for now as we don't have a sprite
+    if (ext === '.loop' || ext === '.song') return getSpriteHTML('icon-song');
     return getSpriteHTML('icon-file');
 }

@@ -18,15 +18,25 @@
     padding: 20px;
 }
 
-.funk-maker-footer {
-    padding: 10px 20px 20px;
-    background: rgba(20, 20, 20, 0.8);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+.fm-panels-container {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+.funk-maker-footer {
+    padding: 15px 20px 15px;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(15px);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    /* Shifted to the left */
+    box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.5);
+    z-index: 100;
 }
 
 .synth-controls {
@@ -45,14 +55,30 @@
     margin-bottom: 0px;
 }
 
-.keyboard {
+.keyboard-unit {
     position: relative;
     display: flex;
-    padding: 25px 10px 10px;
-    background: #2a2a2a;
-    border-radius: 4px;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px;
+    background: #1a1a1a;
+    border-radius: 6px;
     border: 2px solid #333;
     width: fit-content;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.piano-row {
+    display: flex;
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.pads-row {
+    display: flex;
+    gap: 2px;
+    padding-left: 20px;
+    /* Computer keyboard stagger offset */
 }
 
 .piano-key {
@@ -108,12 +134,117 @@
     bottom: 5px;
 }
 
-.piano-status {
-    margin-top: 10px;
-    font-size: 10px;
-    opacity: 0.6;
-    letter-spacing: 1px;
+.note-label {
+    position: absolute;
+    top: 8px;
+    width: 100%;
+    text-align: center;
+    font-size: 9px;
+    font-weight: normal;
+    color: rgba(0, 0, 0, 0.25);
+    pointer-events: none;
     text-transform: uppercase;
+}
+
+.black-key .note-label {
+    color: rgba(255, 255, 255, 0.2);
+    top: 5px;
+}
+
+.pad .note-label {
+    top: 4px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* Pad styles (integrated) */
+.pad {
+    width: 58px;
+    /* Slightly wider to match piano-esque feel */
+    height: 52px;
+    background: var(--pad-color, #444);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    position: relative;
+    box-shadow:
+        0 3px 0 rgba(0, 0, 0, 0.4),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.05s ease;
+}
+
+.pad::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 100%);
+    border-radius: 5px;
+    pointer-events: none;
+}
+
+.pad::after {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    background: inherit;
+    filter: brightness(1.1) saturate(1.2);
+    opacity: 0.4;
+    border-radius: 4px;
+    pointer-events: none;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.pad.active {
+    transform: translateY(2px);
+    box-shadow:
+        0 1px 0 rgba(0, 0, 0, 0.3),
+        0 0 15px var(--pad-color);
+    filter: brightness(1.2);
+}
+
+.pad.drag-over {
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: scale(1.1);
+    box-shadow:
+        0 0 30px var(--pad-color, #fff),
+        inset 0 0 15px rgba(255, 255, 255, 0.5);
+    border-color: #fff;
+    z-index: 10;
+}
+
+.pad.set {
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow:
+        0 4px 0 rgba(0, 0, 0, 0.4),
+        0 0 10px var(--pad-color, transparent),
+        inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.piano-key.dragging {
+    opacity: 0.7;
+    filter: brightness(1.3) saturate(1.2);
+    transform: translateY(-12px) scale(1.05);
+    /* More pronounced lift */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+    z-index: 500;
+}
+
+.pad-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+    pointer-events: none;
+    transition: color 0.15s ease;
+}
+
+.pad:not(.set) .pad-label {
+    color: #01301e;
+    text-shadow: none;
+    opacity: 0.6;
 }
 
 .instrument-builder {
@@ -219,4 +350,1124 @@
 
 .oscillator-toolbar-container .ui-label {
     margin-bottom: 0;
+}
+
+.fm-osc-btn {
+    position: relative;
+    cursor: pointer !important;
+}
+
+.fm-osc-grabber {
+    position: absolute;
+    top: -2px;
+    left: 4px;
+    font-size: 10px;
+    opacity: 0.3;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.fm-osc-btn:hover .fm-osc-grabber {
+    opacity: 0.8;
+}
+
+.fm-osc-btn.dragging {
+    opacity: 0.4;
+    scale: 0.95;
+    border-style: dashed !important;
+}
+
+.fm-osc-btn.drag-over {
+    border-color: var(--color-orange) !important;
+    background: rgba(234, 70, 29, 0.1) !important;
+    transform: scale(1.05);
+}
+
+/* ============================================================
+   TAB SYSTEM
+   ============================================================ */
+
+/* --- Tab Bar --- */
+.fm-tab-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    background: rgba(0, 0, 0, 0.35);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    padding: 0 10px;
+}
+
+.fm-tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.fm-publish-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.fm-input-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fm-input-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: rgba(238, 241, 219, 0.45);
+    letter-spacing: 0.5px;
+    margin-left: 2px;
+}
+
+.fm-song-input {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: var(--color-creme);
+    font-family: var(--desktop-font);
+    font-size: 11px;
+    width: 120px;
+}
+
+.fm-song-input:focus {
+    border-color: var(--color-orange);
+    outline: none;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.fm-publish-btn {
+    background: var(--color-creme);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 6px 16px;
+    color: var(--color-dark-green);
+    font-family: var(--desktop-font);
+    font-weight: 800;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.fm-publish-btn:hover:not(:disabled) {
+    background: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fm-publish-btn:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.fm-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 22px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-family: var(--desktop-font);
+    font-weight: 700;
+    font-size: 0.75rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(238, 241, 219, 0.45);
+    transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+    margin-bottom: -2px;
+    /* overlap the bar border */
+    user-select: none;
+    white-space: nowrap;
+}
+
+.fm-tab-btn:hover {
+    color: rgba(238, 241, 219, 0.8);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.fm-tab-btn.active {
+    color: var(--color-creme);
+    border-bottom-color: var(--color-orange);
+    background: transparent;
+    text-shadow: 0 0 12px rgba(234, 70, 29, 0.4);
+}
+
+.fm-tab-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.fm-tab-label {
+    line-height: 1;
+}
+
+/* --- Panels (shared) --- */
+.fm-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+/* The SYNTH panel reuses the existing scroll-area + footer layout — no extra rules needed */
+
+/* ============================================================
+   LOOP PANEL  — canvas-based tape roll redesign
+   ============================================================ */
+.fm-loop-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    color: var(--bios-text);
+    font-family: var(--desktop-font);
+}
+
+/* ── Toolbar (top strip) ── */
+.fm-loop-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+}
+
+/* ── Loop tool buttons (loop-point marker, set-end) ── */
+.fm-loop-tools {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.fm-tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 5px 10px;
+    background: rgba(238, 241, 219, 0.06);
+    border: 1px solid rgba(238, 241, 219, 0.18);
+    border-radius: 5px;
+    color: var(--bios-text);
+    font-family: var(--desktop-font);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    min-width: 52px;
+}
+
+.fm-tool-btn:hover {
+    background: rgba(238, 241, 219, 0.15);
+    border-color: rgba(238, 241, 219, 0.35);
+}
+
+.fm-tool-btn.active {
+    background: rgba(234, 70, 29, 0.25);
+    border-color: var(--color-orange);
+    box-shadow: 0 0 10px rgba(234, 70, 29, 0.35);
+    color: var(--color-orange);
+}
+
+.fm-tool-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.fm-tool-label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.75;
+    line-height: 1;
+}
+
+.fm-clear-btn {
+    background: rgba(180, 30, 10, 0.15) !important;
+    border-color: rgba(234, 70, 29, 0.3) !important;
+}
+
+.fm-clear-btn:hover {
+    background: rgba(234, 70, 29, 0.3) !important;
+    border-color: rgba(234, 70, 29, 0.6) !important;
+}
+
+/* Transport bar */
+.fm-transport {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-shrink: 0;
+}
+
+.fm-transport-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fm-transport-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.55;
+}
+
+.fm-bpm-input {
+    width: 56px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 4px;
+    color: var(--color-orange);
+    font-family: var(--bios-font);
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px 6px;
+    outline: none;
+}
+
+.fm-bpm-input:focus {
+    border-color: var(--color-orange);
+    box-shadow: 0 0 6px rgba(234, 70, 29, 0.35);
+}
+
+.fm-zoom-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 4px;
+    background: rgba(238, 241, 219, 0.15);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+.fm-zoom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--color-orange);
+    border-radius: 50%;
+    border: 2px solid var(--color-creme);
+    box-shadow: 0 0 8px rgba(234, 70, 29, 0.4);
+    transition: transform 0.1s;
+}
+
+.fm-zoom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.fm-length-btns {
+    display: flex;
+    gap: 0;
+}
+
+.fm-len-btn {
+    padding: 4px 10px;
+    background: rgba(238, 241, 219, 0.08);
+    border: 1px solid rgba(238, 241, 219, 0.18);
+    color: var(--bios-text);
+    font-family: var(--desktop-font);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.fm-len-btn:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.fm-len-btn:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.fm-len-btn:hover {
+    background: rgba(238, 241, 219, 0.18);
+}
+
+.fm-len-btn.active {
+    background: var(--color-orange);
+    border-color: var(--color-orange);
+    color: white;
+}
+
+/* Transport buttons */
+.fm-transport-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: rgba(238, 241, 219, 0.08);
+    border: 1px solid rgba(238, 241, 219, 0.2);
+    border-radius: 4px;
+    color: var(--bios-text);
+    font-family: var(--desktop-font);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    white-space: nowrap;
+}
+
+.fm-transport-btn:hover {
+    background: rgba(238, 241, 219, 0.18);
+    border-color: rgba(238, 241, 219, 0.4);
+}
+
+.fm-tool-btn.active {
+    background: var(--color-orange) !important;
+    border-color: var(--color-orange) !important;
+    color: white !important;
+    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
+}
+
+.fm-transport-btn:active {
+    transform: translateY(1px);
+}
+
+.fm-rec-btn {
+    background: rgba(180, 30, 10, 0.3) !important;
+    border-color: rgba(234, 70, 29, 0.5) !important;
+}
+
+.fm-rec-btn:hover {
+    background: rgba(234, 70, 29, 0.5) !important;
+    box-shadow: 0 0 10px rgba(234, 70, 29, 0.4);
+}
+
+.fm-rec-btn.recording {
+    background: var(--color-orange) !important;
+    border-color: #ff6644 !important;
+    color: white;
+    box-shadow: 0 0 14px rgba(234, 70, 29, 0.6);
+    animation: fm-rec-pulse 1s ease-in-out infinite;
+}
+
+@keyframes fm-rec-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 14px rgba(234, 70, 29, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 24px rgba(234, 70, 29, 1);
+    }
+}
+
+.fm-rec-dot {
+    color: #ff4422;
+    font-size: 10px;
+    animation: none;
+}
+
+.fm-rec-btn.recording .fm-rec-dot {
+    animation: fm-dot-blink 0.8s step-end infinite;
+}
+
+@keyframes fm-dot-blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+/* ============================================================
+   ROLL STAGE  — canvas tape roll
+   ============================================================ */
+
+/* The stage is a growing flex region that contains the canvas + overlay elements */
+.fm-roll-stage {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 0;
+    background: #060c08;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Canvas fills the entire stage */
+.fm-roll-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Playhead line is now drawn directly on the canvas — DOM div hidden */
+.fm-roll-head {
+    display: none;
+}
+
+@keyframes fm-head-glow {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 18px 3px rgba(234, 70, 29, 0.7);
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 28px 6px rgba(234, 70, 29, 0.4);
+    }
+}
+
+/* Roll info overlay (top-right) */
+.fm-roll-info {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    pointer-events: none;
+    z-index: 20;
+}
+
+.fm-roll-status {
+    font-family: var(--bios-font);
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--color-orange);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* When roll is active, make the status text visible */
+.fm-roll-stage.rolling .fm-roll-status {
+    opacity: 1;
+    animation: fm-status-pulse 1.2s ease-in-out infinite;
+}
+
+.fm-roll-hint {
+    font-family: var(--desktop-font);
+    font-size: 0.62rem;
+    opacity: 0.3;
+    letter-spacing: 0.5px;
+    color: var(--bios-text);
+}
+
+/* ── The ROLL toggle button — lives in the toolbar (compact) ── */
+.fm-roll-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 18px;
+    background: rgba(238, 241, 219, 0.07);
+    border: 1.5px solid rgba(238, 241, 219, 0.25);
+    border-radius: 5px;
+    color: var(--bios-text);
+    font-family: var(--desktop-font);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.18s, border-color 0.18s, box-shadow 0.18s, color 0.18s;
+    flex-shrink: 0;
+}
+
+.fm-roll-toggle:hover {
+    background: rgba(238, 241, 219, 0.14);
+    border-color: rgba(238, 241, 219, 0.5);
+}
+
+.fm-roll-toggle.rolling {
+    background: rgba(234, 70, 29, 0.3);
+    border-color: var(--color-orange);
+    color: var(--color-orange);
+    box-shadow: 0 0 14px rgba(234, 70, 29, 0.4);
+    animation: fm-rec-pulse 1.2s ease-in-out infinite;
+}
+
+/* ── When on the loop tab, make the footer transparent so the roll peeks through ── */
+.loop-tab-active .funk-maker-footer {
+    background: rgba(6, 13, 8, 0.55) !important;
+    backdrop-filter: none !important;
+    border-top-color: rgba(234, 70, 29, 0.2) !important;
+    box-shadow: none !important;
+}
+
+
+
+
+.fm-song-panel {
+    display: flex;
+    flex-direction: row !important;
+    /* side-by-side */
+    height: 100%;
+}
+
+.fm-song-sidebar {
+    width: 200px;
+    background: rgba(0, 0, 0, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.fm-sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fm-sidebar-title {
+    padding: 12px 14px;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--color-creme);
+    opacity: 0.5;
+    text-transform: uppercase;
+}
+
+.fm-trash-can {
+    width: 18px;
+    height: 18px;
+    background-image: url('../assets/bin-icon.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0.3;
+    transition: all 0.2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    cursor: pointer;
+    image-rendering: pixelated;
+}
+
+.fm-trash-can:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.fm-trash-can.drag-over {
+    opacity: 1;
+    transform: scale(1.4) rotate(10deg);
+    filter: drop-shadow(0 0 10px var(--color-orange));
+}
+
+.fm-loop-bank {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fm-timeline-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+    /* Flush against header and sides */
+    min-height: 0;
+    position: relative;
+}
+
+/* --- Revamped Song Header --- */
+.fm-song-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: rgba(10, 15, 12, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    flex-wrap: nowrap;
+    min-height: 44px;
+    box-sizing: border-box;
+}
+
+.fm-header-left,
+.fm-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.fm-separator {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 4px;
+}
+
+.fm-tool-group {
+    display: flex;
+    gap: 4px;
+}
+
+.fm-transport-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.fm-zoom-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.fm-zoom-group .fm-transport-label {
+    margin-bottom: 0px;
+    font-size: 0.55rem;
+    opacity: 0.3;
+}
+
+.fm-transport-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--color-creme);
+    opacity: 0.4;
+    user-select: none;
+}
+
+/* Specific overrides for the Song Header toolbar */
+.fm-song-header .fm-transport-btn {
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fm-song-header .fm-tool-btn {
+    width: 32px;
+    height: 28px;
+    padding: 0;
+    font-size: 14px;
+}
+
+.fm-song-header .fm-bpm-input {
+    width: 44px;
+    height: 28px;
+    font-size: 0.8rem;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.fm-song-header .fm-zoom-slider {
+    width: 100px;
+    margin: 0;
+}
+
+
+/* Loop chips in bank */
+.fm-loop-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(238, 241, 219, 0.05);
+    border: 1px solid rgba(238, 241, 219, 0.12);
+    border-radius: 6px;
+    cursor: grab;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
+}
+
+.fm-loop-chip:hover {
+    background: rgba(238, 241, 219, 0.15);
+    border-color: rgba(238, 241, 219, 0.3);
+}
+
+.fm-loop-chip:active {
+    cursor: grabbing;
+    transform: scale(0.96);
+}
+
+.fm-loop-chip-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.fm-loop-chip span {
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--color-creme);
+    opacity: 0.85;
+}
+
+.fm-chip-play-btn {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--color-creme);
+    cursor: pointer;
+    font-size: 0.9rem;
+    opacity: 0.4;
+    transition: opacity 0.2s, transform 0.1s, color 0.2s;
+    padding: 4px;
+}
+
+.fm-chip-play-btn:hover {
+    opacity: 1;
+    color: var(--color-orange);
+    transform: scale(1.2);
+}
+
+.fm-timeline-viewport {
+    flex: 1;
+    overflow: auto;
+    /* Allow both X and Y scroll */
+    position: relative;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+.fm-timeline-scroller {
+    position: relative;
+    min-height: 100%;
+}
+
+.fm-timeline-ruler {
+    height: 34px;
+    position: relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), transparent);
+}
+
+.fm-ruler-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.65rem;
+    padding-left: 6px;
+    color: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+    font-family: var(--font-mono);
+}
+
+.fm-ruler-bar {
+    border-left-color: rgba(255, 255, 255, 0.4);
+    font-weight: 800;
+    color: var(--color-creme);
+}
+
+.fm-tracks {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0;
+}
+
+.fm-track {
+    display: flex;
+    height: 70px;
+    align-items: center;
+}
+
+.fm-track-lane {
+    flex: 1;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
+    border-radius: 6px;
+    transition: background 0.2s, box-shadow 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.fm-track-lane.drag-over {
+    background: rgba(234, 70, 29, 0.08);
+    box-shadow: inset 0 0 15px rgba(234, 70, 29, 0.2);
+    border-color: rgba(234, 70, 29, 0.4);
+}
+
+.fm-timeline-block {
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.fm-timeline-block:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    filter: brightness(1.1);
+}
+
+.fm-block-delete {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+}
+
+.fm-timeline-block:hover .fm-block-delete {
+    opacity: 1;
+}
+
+.fm-block-delete:hover {
+    background: #ff3b30;
+}
+
+.fm-block-resize {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 10px;
+    height: 100%;
+    cursor: ew-resize;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.fm-block-resize:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.fm-block-resize::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    box-shadow: -3px 0 0 rgba(255, 255, 255, 0.4);
+}
+
+.fm-song-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--color-orange);
+    box-shadow: 0 0 15px var(--color-orange), 0 0 2px white;
+    z-index: 1000;
+    pointer-events: none;
+    transition: left 0.05s linear;
+    /* Smooth micro-movement */
+}
+
+#fm-song-play.playing {
+    background: var(--color-orange);
+    color: white;
+    box-shadow: 0 0 20px var(--color-orange);
+    animation: fm-pulse-orange 2s infinite;
+}
+
+.fm-song-panel button:focus {
+    outline: none;
+}
+
+
+@keyframes fm-pulse-orange {
+    0% {
+        filter: brightness(1);
+    }
+
+    50% {
+        filter: brightness(1.3);
+    }
+
+    100% {
+        filter: brightness(1);
+    }
+}
+
+/* --- Animations for saving --- */
+.fm-suck-anim {
+    position: fixed;
+    background: var(--color-orange);
+    border-radius: 4px;
+    z-index: 9999;
+    pointer-events: none;
+    transition: all 0.6s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    box-shadow: 0 0 20px var(--color-orange);
+}
+
+.fm-tab-btn.glow {
+    animation: fm-tab-glow 0.8s ease-out;
+}
+
+@keyframes fm-tab-glow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(234, 70, 29, 0);
+    }
+
+    30% {
+        box-shadow: 0 0 20px 10px rgba(234, 70, 29, 0.6);
+        background: rgba(234, 70, 29, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(234, 70, 29, 0);
+    }
+}
+/* --- Preview Mode --- */
+.fm-preview-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: var(--color-dark-green);
+    color: var(--color-creme);
+    padding: 30px;
+    text-align: center;
+}
+
+.fm-preview-title {
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 5px;
+    color: var(--color-creme);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.fm-preview-from {
+    font-size: 11px;
+    font-family: var(--desktop-font);
+    margin-bottom: 30px;
+    opacity: 0.8;
+    letter-spacing: 1.5px;
+    font-weight: 500;
+}
+
+.fm-preview-from i {
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.fm-preview-bar-container {
+    width: 85%;
+    height: 4px;
+    background: rgba(238, 241, 219, 0.1);
+    border-radius: 2px;
+    position: relative;
+    margin-bottom: 40px;
+    border: 1px solid rgba(238, 241, 219, 0.1);
+}
+
+.fm-preview-playhead {
+    width: 2px;
+    height: 20px;
+    background: var(--color-orange);
+    position: absolute;
+    top: -7px;
+    left: 0;
+    box-shadow: 0 0 10px var(--color-orange);
+    transition: left 0.1s linear;
+}
+
+.fm-preview-controls {
+    display: flex;
+    gap: 20px;
+}
+
+.fm-preview-btn {
+    padding: 8px 24px;
+    font-family: var(--desktop-font);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    background: var(--color-creme);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: var(--color-dark-green);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fm-preview-btn:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+}
+
+.fm-preview-btn#fm-preview-remix {
+    background: var(--color-orange);
+    border-color: var(--color-orange);
+    color: white;
+}
+
+.fm-preview-btn#fm-preview-remix:hover {
+    background: #ff6644;
+    border-color: #ff6644;
+    box-shadow: 0 5px 15px rgba(234, 70, 29, 0.4);
 }

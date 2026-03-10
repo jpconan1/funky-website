@@ -248,6 +248,7 @@ export class WindowManager {
                 const titleSpan = win.querySelector('.window-title');
                 if (titleSpan) titleSpan.textContent = newTitle;
             },
+            close: () => this.closeWindow(windowData),
             minWidth: 200,
             minHeight: 150,
             // Hook so the ZoomBar can call back into setWindowScale
@@ -296,10 +297,12 @@ export class WindowManager {
         // Focus + touch-grab Handler
         win.addEventListener('pointerdown', (e) => {
             this.focusWindow(windowData);
-            const tag = e.target.tagName;
-            const isInteractive = tag === 'INPUT' || tag === 'TEXTAREA' ||
-                tag === 'SELECT' || tag === 'BUTTON' || tag === 'A' ||
-                e.target.isContentEditable;
+            // Use closest() so that clicks on child elements inside a button
+            // (e.g. <span> icons/labels within .fm-tab-btn) are also treated
+            // as interactive and don't get their click event suppressed.
+            const isInteractive = !!e.target.closest(
+                'button, input, textarea, select, a, [contenteditable], .piano-key, .pad, .fm-osc-btn, .fm-loop-chip, .fm-timeline-block, .fm-block-delete'
+            );
             if (!isInteractive) {
                 e.preventDefault();
             }
