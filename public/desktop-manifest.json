@@ -9,8 +9,8 @@
   },
   {
     "name": "Hall of Fame",
-    "size": 160,
-    "modified": "2026-03-04T01:04:48.651Z",
+    "size": 192,
+    "modified": "2026-03-10T04:43:46.353Z",
     "extension": "",
     "type": "directory",
     "path": "Hall of Fame",
@@ -38,6 +38,14 @@
         "extension": ".txt",
         "type": "text",
         "path": "Hall of Fame/hall-of-fame.txt"
+      },
+      {
+        "name": "yea.png",
+        "size": 25342,
+        "modified": "2026-03-08T05:35:46.215Z",
+        "extension": ".png",
+        "type": "image",
+        "path": "Hall of Fame/yea.png"
       }
     ]
   },
@@ -48,13 +56,5 @@
     "extension": ".jpg",
     "type": "image",
     "path": "my_dog.jpg"
-  },
-  {
-    "name": "yea.png",
-    "size": 25342,
-    "modified": "2026-03-08T05:35:46.215Z",
-    "extension": ".png",
-    "type": "image",
-    "path": "yea.png"
   }
 ]
