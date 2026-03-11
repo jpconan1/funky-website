@@ -1,16 +1,17 @@
 March 9, 2026
 
 - Added the Funk Maker 3000, a synth toy thing that makes loops that makes songs that you can post to the desktop! Try it out! Its full of bugs!
-
+<br><br>
 - Added transparency to our Paint port
+<br><br>
 
 
 March 3, 2026
-
+<br><br>
 - Added 'Chess VS Admin', giving visitors another way to interact with the site. Users passing by can play a move, and by their collective action, play a chess game with me. That's the idea, anyway! Uses chess.js
-
+<br><br>
 - Added a port of paint.js and removed my img editor - this solution is much more fun & functional. It's a little customized, just removing stuff and locking the canvas to 256x256. Try selecting file > exit for an unintentional easter egg!
-
+<br><br>
 - Mobile is more functional but not completly implemented yet
-
-- Beginnings of a settings menu. Big plans!
+<br><br>
+- Beginnings of a settings menu. 

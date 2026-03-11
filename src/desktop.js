@@ -13,6 +13,7 @@ import { ChessApp } from './chess.js';
 import { Settings } from './settings.js';
 import { StartMenu } from './start-menu.js';
 import { applyWallpaperToDesktop } from './paint.js';
+import { VirusMan, SpriteRenderer } from './virus-man.js';
 
 
 async function preloadAssets(paths) {
@@ -77,6 +78,7 @@ export async function initDesktop() {
         new URL('./assets/chess-icon.png', import.meta.url).href,
         new URL('./assets/settings.png', import.meta.url).href,
         new URL('./assets/funk-maker-3000.png', import.meta.url).href,
+        new URL('./assets/virus-man/icon.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -143,14 +145,45 @@ export async function initDesktop() {
         Events = Matter.Events,
         Runner = Matter.Runner;
 
-    const engine = Engine.create();
-    engine.gravity.y = 0; // Keep global gravity 0, we'll apply it selectively
-    engine.gravity.x = 0;
-
     // Collision Categories
     const WALL_CATEGORY = 0x0001;
     const ICON_CATEGORY = 0x0002;
     const BIN_CATEGORY = 0x0004;
+    const WINDOW_CATEGORY = 0x0008;
+    const VIRUS_MAN_CATEGORY = 0x0010;
+
+    const engine = Engine.create();
+    engine.gravity.y = 0; // Keep global gravity 0, we'll apply it selectively
+    engine.gravity.x = 0;
+
+    let virusMan = null;
+    let virusManSpawned = false;
+
+    const virusManInitializer = (async () => {
+        // Create off-screen initially
+        virusMan = new VirusMan(engine, -1000, -1000);
+        await virusMan.init();
+        // Remove from world immediately - will add back when spawned
+        Matter.Composite.remove(engine.world, virusMan.body);
+    })();
+
+    async function spawnVirusManAt(x, y) {
+        await virusManInitializer;
+        
+        Matter.Body.setPosition(virusMan.body, { x, y });
+        Matter.Body.setVelocity(virusMan.body, { x: 0, y: 0 });
+        Matter.Composite.add(engine.world, virusMan.body);
+
+        virusMan.body.collisionFilter = {
+            category: VIRUS_MAN_CATEGORY,
+            mask: WALL_CATEGORY | ICON_CATEGORY | BIN_CATEGORY | WINDOW_CATEGORY | VIRUS_MAN_CATEGORY
+        };
+        
+        if (!virusManSpawned) {
+            iconGrid.appendChild(virusMan.element);
+            virusManSpawned = true;
+        }
+    }
 
     const runner = Runner.create();
     Runner.run(runner, engine);
@@ -177,7 +210,26 @@ export async function initDesktop() {
 
     // "The Bin" Physics Body & State
     let binBody = null;
-    let isBinning = false;
+    let binnedRegistry = {};
+    let binRenderer = new SpriteRenderer(64);
+    let binSheet = null;
+    let binFrameIndex = 0;
+    let binTumbleTimer = 0;
+    let binIsTumbling = false;
+
+    async function refreshBinnedRegistry() {
+        const binned = await getBinnedMessages();
+        const newRegistry = {};
+        binned.forEach(msg => {
+            newRegistry[msg.id] = {
+                id: msg.id,
+                name: msg.filename,
+                hp: msg.bin_count || 1,
+                data: msg
+            };
+        });
+        binnedRegistry = newRegistry;
+    }
 
     function updateWalls() {
         const width = iconGrid.clientWidth;
@@ -248,11 +300,81 @@ export async function initDesktop() {
         }
     });
 
+    // Window Physics Bodies Sync
+    const windowBodies = new Map();
+
     // Sync physics bodies with DOM elements
     Events.on(engine, 'afterUpdate', () => {
         const width = iconGrid.clientWidth;
         const height = iconGrid.clientHeight;
         const margin = 200;
+
+        // Sync Window Bodies
+        const gridRect = iconGrid.getBoundingClientRect();
+        const uiScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+
+        wm.windows.forEach(win => {
+            let body = windowBodies.get(win.id);
+            const winRect = win.element.getBoundingClientRect();
+            
+            // Convert rect to logical grid coordinates
+            const winW = winRect.width / uiScale;
+            const winH = winRect.height / uiScale;
+            const winX = (winRect.left - gridRect.left) / uiScale + winW / 2;
+            const winY = (winRect.top - gridRect.top) / uiScale + winH / 2;
+
+            if (!body) {
+                body = Bodies.rectangle(winX, winY, winW, winH, {
+                    isStatic: true,
+                    friction: 0.1,
+                    restitution: 0.2,
+                    collisionFilter: { 
+                        category: WINDOW_CATEGORY,
+                        mask: WALL_CATEGORY | WINDOW_CATEGORY | VIRUS_MAN_CATEGORY
+                    }
+                });
+                windowBodies.set(win.id, body);
+                Composite.add(engine.world, body);
+            } else {
+                Matter.Body.setPosition(body, { x: winX, y: winY });
+                
+                // If size changed (e.g. window resized), recreate the body
+                if (Math.abs(body.bounds.max.x - body.bounds.min.x - winW) > 5 ||
+                    Math.abs(body.bounds.max.y - body.bounds.min.y - winH) > 5) {
+                    Composite.remove(engine.world, body);
+                    body = Bodies.rectangle(winX, winY, winW, winH, {
+                        isStatic: true,
+                        friction: 0.1,
+                        restitution: 0.2,
+                        collisionFilter: { 
+                            category: WINDOW_CATEGORY,
+                            mask: WALL_CATEGORY | WINDOW_CATEGORY | VIRUS_MAN_CATEGORY
+                        }
+                    });
+                    windowBodies.set(win.id, body);
+                    Composite.add(engine.world, body);
+                }
+            }
+        });
+
+        // Remove bodies for closed windows
+        for (const [id, body] of windowBodies.entries()) {
+            if (!wm.windows.find(w => w.id === id)) {
+                Composite.remove(engine.world, body);
+                windowBodies.delete(id);
+            }
+        }
+
+        // OOB check for Virus-Man
+        if (virusMan && virusManSpawned) {
+            if (virusMan.x < -margin || virusMan.x > width + margin || virusMan.y < -margin || virusMan.y > height + margin) {
+                Matter.Body.setPosition(virusMan.body, {
+                    x: width / 2,
+                    y: height / 2
+                });
+                Matter.Body.setVelocity(virusMan.body, { x: 0, y: 0 });
+            }
+        }
 
         iconPairs.forEach(({ element, body, file }) => {
             const { x, y } = body.position;
@@ -267,7 +389,11 @@ export async function initDesktop() {
             }
 
             // Suction Effect logic
-            if (binBody && file && file.isCloud && !body.isStatic && !element.classList.contains('dragging')) {
+            const now = Date.now();
+            const immunityUntil = parseInt(element.dataset.binImmunityUntil || "0");
+            const isImmune = now < immunityUntil;
+
+            if (binBody && file && file.isCloud && !body.isStatic && !element.classList.contains('dragging') && !isImmune) {
                 const dx = binBody.position.x - x;
                 const dy = binBody.position.y - y;
                 const distSq = dx * dx + dy * dy;
@@ -302,7 +428,138 @@ export async function initDesktop() {
             element.style.top = `${y - 60}px`; // Icons are roughly 100x120
             element.style.transform = `rotate(${body.angle}rad) scale(${element.dataset.scale || 1})`;
         });
+
+        // Update Virus-Man
+        if (virusMan && virusManSpawned) {
+            const now = performance.now();
+            const dt = virusMan.lastTimestamp ? now - virusMan.lastTimestamp : 16.6;
+            virusMan.lastTimestamp = now;
+            virusMan.update(dt);
+            virusMan.draw();
+        }
+
+        // Punch Effect
+        if (virusMan && virusManSpawned && virusMan.isHitFrame) { 
+            const punchRange = 100;
+            const punchForce = 0.05;
+            
+            // 1. Hit regular icons
+            iconPairs.forEach(({ body }) => {
+                if (body === binBody) return;
+                const dx = body.position.x - virusMan.body.position.x;
+                const dy = body.position.y - virusMan.body.position.y;
+                const distSq = dx * dx + dy * dy;
+                if (distSq < punchRange * punchRange) {
+                    const dist = Math.sqrt(distSq);
+                    Matter.Body.applyForce(body, body.position, {
+                        x: (dx / dist) * punchForce,
+                        y: (dy / dist) * punchForce
+                    });
+                }
+            });
+
+            // 2. Hit the Bin (The Combat!)
+            if (binBody) {
+                const dx = binBody.position.x - virusMan.body.position.x;
+                const dy = binBody.position.y - virusMan.body.position.y;
+                const distSq = dx * dx + dy * dy;
+                
+                if (distSq < punchRange * punchRange) {
+                    // Trigger Tumble Animation
+                    binIsTumbling = true;
+                    binFrameIndex = 1; // Start tumble sequence
+                    
+                    // Knockback the bin
+                    const dist = Math.sqrt(distSq);
+                    Matter.Body.applyForce(binBody, binBody.position, {
+                        x: (dx / dist) * 0.35, // Pushes into the wall
+                        y: -0.5 // Launches high
+                    });
+
+                    // Combat Logic: Release 3-5 files
+                    const keys = Object.keys(binnedRegistry);
+                    if (keys.length > 0) {
+                        const count = Math.min(keys.length, Math.floor(Math.random() * 3) + 3); // 3 to 5
+                        console.log(`[Bin Combat] IMPACT! Dumping ${count} files.`);
+                        
+                        // Shuffle or just pick first few random ones
+                        const shuffled = keys.sort(() => 0.5 - Math.random());
+                        const targets = shuffled.slice(0, count);
+                        
+                        targets.forEach(key => {
+                            handleFileExplosion(binnedRegistry[key]);
+                        });
+                    }
+                }
+            }
+        }
+
+        // Update Bin Animation
+        if (binIsTumbling && binSheet) {
+            binTumbleTimer += dt;
+            const fps = 24;
+            const interval = 1000 / fps;
+            if (binTumbleTimer >= interval) {
+                binFrameIndex++;
+                if (binFrameIndex >= binSheet.frameCount) {
+                    binFrameIndex = 0; // Back to idle
+                    binIsTumbling = false;
+                }
+                binTumbleTimer = 0;
+
+                // Draw to canvas
+                const canvas = binBody.element.querySelector('canvas');
+                if (canvas) {
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, 64, 64);
+                    binRenderer.drawFrame(ctx, binSheet, binFrameIndex, 0, 0, 64, 64);
+                }
+            }
+        }
     });
+
+    async function handleFileExplosion(file) {
+        console.log(`[Bin Combat] EXPLOSION! Restoring ${file.name}`);
+        
+        // 1. Supabase Restoration
+        try {
+            await restoreMessage(file.id);
+            delete binnedRegistry[file.id];
+            
+            // 2. Create Desktop Icon at Bin Position
+            const cloudFile = {
+                id: file.id,
+                name: file.name,
+                extension: file.data.filename.includes('.') ? file.data.filename.substring(file.data.filename.lastIndexOf('.')).toLowerCase() : '.txt',
+                type: 'cloud_file',
+                content: file.data.content,
+                fromName: file.data.from_name,
+                createdAt: file.data.created_at,
+                isCloud: true
+            };
+
+            const icon = createIcon(cloudFile, binBody.position.x, binBody.position.y);
+            icon.dataset.newlyRestored = "true"; // Flag to protect from clearing during refresh
+            icon.dataset.binImmunityUntil = Date.now() + 3000; // 3 seconds of suction immunity
+            iconGrid.appendChild(icon);
+
+            // 3. High-Velocity Impulse (The Scatter)
+            const angle = Math.random() * Math.PI * 2;
+            const force = 15;
+            Matter.Body.setVelocity(icon.body, {
+                x: Math.cos(angle) * force,
+                y: -10 - Math.random() * 10 // Guaranteed upward pop
+            });
+
+            // 4. Flash Effect on the Bin
+            const element = binBody.element;
+            element.style.filter = "brightness(3) contrast(1.5)";
+            setTimeout(() => element.style.filter = "", 200);
+
+        } catch (err) {
+            console.error("Failed to restore file during explosion:", err);
+        }
+    }
 
     async function startBinningSequence(element, body, file) {
         // 1. Visual Feedack: Shrink animation
@@ -332,6 +589,9 @@ export async function initDesktop() {
         try {
             await binMessage(file.id);
             console.log(`Binned: ${file.name}`);
+            
+            // Refresh local registry so we know it's there for combat
+            await refreshBinnedRegistry();
 
             // If this icon was the wallpaper source, clear the global wallpaper
             const current = await getWallpaper();
@@ -370,9 +630,9 @@ export async function initDesktop() {
             <div class="icon-label">${formatFileName(file.name)}</div>
         `;
 
-        // Physics Body
-        const width = 100;
-        const height = 120;
+        // Physics Body (25% smaller than the 100x120 visual size)
+        const width = 75;
+        const height = 90;
 
         // Use provided position or fallback to random
         const x = initialX !== undefined ? initialX : (Math.random() * (iconGrid.clientWidth - width) + width / 2);
@@ -384,7 +644,7 @@ export async function initDesktop() {
             inertia: Infinity, // Prevent rotation for icons
             collisionFilter: {
                 category: ICON_CATEGORY,
-                mask: WALL_CATEGORY | ICON_CATEGORY // Don't collide with bin so they can be binned
+                mask: WALL_CATEGORY | ICON_CATEGORY | VIRUS_MAN_CATEGORY // Don't collide with bin or windows
             }
         });
 
@@ -457,6 +717,27 @@ export async function initDesktop() {
 
         if (file.type === 'settings') {
             return settings.open();
+        }
+
+        if (file.type === 'virus_man_exe') {
+            const pair = iconPairs.find(p => p.file === file);
+            if (pair) {
+                const { element, body } = pair;
+                const { x, y } = body.position;
+                
+                // 1. Hide/Remove icon
+                Matter.Composite.remove(engine.world, body);
+                element.remove();
+                const index = iconPairs.indexOf(pair);
+                if (index > -1) iconPairs.splice(index, 1);
+                
+                // 2. Spawn Virus Man
+                spawnVirusManAt(x, y);
+                
+                // 3. System Alert
+                wm.alert(`WARNGIN: sysJP'''''''$OVERRIDE0x999999{security_breach} <br><br> ARROW KEYS, XZ CONTROLS VIRUS-MAN`, "SYSTEM CRITICAL ERROR");
+            }
+            return;
         }
 
         if (!file.path && !file.isCloud && file.type !== 'directory') {
@@ -571,16 +852,25 @@ export async function initDesktop() {
         openFile(e.detail);
     });
 
-    function createBinIcon(initialX, initialY) {
+    async function createBinIcon(initialX, initialY) {
         const bin = document.createElement('div');
         bin.className = 'icon';
         bin.innerHTML = `
-            <div class="icon-image"><div class="sprite icon-bin" style="--frames: 1"></div></div>
+            <div class="icon-image"><canvas width="64" height="64"></canvas></div>
             <div class="icon-label">The Bin</div>
         `;
 
-        const width = 100;
-        const height = 120;
+        // Preload tumble sheet
+        const tumbleSheetUrl = new URL('./assets/virus-man/bin-tumble-sheet.png', import.meta.url).href;
+        binSheet = await binRenderer.loadSheet(tumbleSheetUrl, 64);
+        
+        // Draw initial frame
+        const canvas = bin.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        binRenderer.drawFrame(ctx, binSheet, 0, 0, 0, 64, 64);
+
+        const width = 75;
+        const height = 90;
         const x = initialX !== undefined ? initialX : (iconGrid.clientWidth - 80);
         // Start higher up if no initialY provided, so it falls on load
         const y = initialY !== undefined ? initialY : 100;
@@ -589,11 +879,11 @@ export async function initDesktop() {
             isStatic: false,
             isSensor: false,
             friction: 0.5,
-            restitution: 0.4,
+            restitution: 0.8, // High bounciness for wall bounces
             inertia: Infinity, // Keep it upright
             collisionFilter: {
                 category: BIN_CATEGORY,
-                mask: WALL_CATEGORY // Only collide with walls/floor
+                mask: WALL_CATEGORY | VIRUS_MAN_CATEGORY // Only collide with walls/floor and Virus-Man
             }
         });
         binBody.element = bin;
@@ -720,7 +1010,8 @@ export async function initDesktop() {
             });
 
             // Add The Bin to the desktop
-            createBinIcon();
+            await createBinIcon();
+            await refreshBinnedRegistry();
 
             // Add Burger Joint icon
             const burgerFile = {
@@ -792,6 +1083,15 @@ export async function initDesktop() {
             };
             const fmPos = getGridPosition(iconPairs.length);
             iconGrid.appendChild(createIcon(fmFile, fmPos.x, fmPos.y));
+
+            // Add Virus Man icon
+            const virusManFile = {
+                name: 'virus-man.exe',
+                type: 'virus_man_exe',
+                extension: '.exe'
+            };
+            const virusManPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(virusManFile, virusManPos.x, virusManPos.y));
         } catch (error) {
             console.error('Failed to load desktop manifest:', error);
         }
@@ -806,18 +1106,28 @@ export async function initDesktop() {
             // For now, let's keep it simple: if refresh, clear all cloud icons and reload
             if (isRefresh) {
                 // Remove physics bodies and DOM elements for cloud icons
-                const cloudPairs = iconPairs.filter(p => p.element.querySelector('.cloud-badge'));
+                // BUT SKIP icons that were just exploded and are in motion
+                const cloudPairs = iconPairs.filter(p => 
+                    p.element.querySelector('.cloud-badge') && 
+                    !p.element.dataset.newlyRestored
+                );
                 cloudPairs.forEach(p => {
                     Composite.remove(engine.world, p.body);
                     p.element.remove();
                 });
                 // Update iconPairs array
-                const remainingPairs = iconPairs.filter(p => !p.element.querySelector('.cloud-badge'));
+                const remainingPairs = iconPairs.filter(p => 
+                    !p.element.querySelector('.cloud-badge') || 
+                    p.element.dataset.newlyRestored
+                );
                 iconPairs.length = 0;
                 iconPairs.push(...remainingPairs);
             }
 
             messages.forEach((msg) => {
+                // Skip if this icon was recently exploded and is already physical
+                if (iconPairs.find(p => p.file && p.file.id === msg.id)) return;
+
                 const filename = (msg.filename || 'message.txt').trim();
                 let msgExt = filename.includes('.') ? filename.substring(filename.lastIndexOf('.')).toLowerCase() : '.txt';
 
@@ -936,6 +1246,9 @@ export function getIconSymbol(file) {
     }
     if (file.type === 'funk_maker') {
         return `<div class="sprite" style="background-image: url('${new URL('./assets/funk-maker-3000.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
+    if (file.type === 'virus_man_exe') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/virus-man/icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
     }
     if (file.type === 'video') {
         return `<div class="sprite" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB4PSI0IiB5PSIxMiIgd2lkdGg9IjU2IiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0ZGMDAwMCIgLz48cGF0aCBkPSJNMjYgMjJMIDQyIDMyTDI2IDQyVjIyWiIgZmlsbD0id2hpdGUiIC8+PC9zdmc+'); --frames: 1;"></div>`;
