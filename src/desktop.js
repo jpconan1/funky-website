@@ -735,7 +735,14 @@ export async function initDesktop() {
                 spawnVirusManAt(x, y);
                 
                 // 3. System Alert
-                wm.alert(`WARNGIN: sysJP'''''''$OVERRIDE0x999999{security_breach} <br><br> ARROW KEYS, XZ CONTROLS VIRUS-MAN`, "SYSTEM CRITICAL ERROR");
+                const glitchStyle = `font-family: 'IBM VGA', monospace; font-size: 16px; white-space: nowrap; margin-bottom: 10px; display: block; filter: drop-shadow(2px 2px 0px rgba(255,0,0,0.5));`;
+                const instructionStyle = `font-family: 'Inter', sans-serif; font-size: 12px; text-transform: lowercase; color: var(--color-orange); line-height: 1.4; display: block;`;
+                
+                wm.alert(
+                    `<span style="${glitchStyle}">WARNGIN: sysJP'''''''$OVERRIDE0x999999{security_breach}</span>
+                     <span style="${instructionStyle}">arrow keys, xz controls virus-man</span>`, 
+                    "SYSTEM CRITICAL ERROR"
+                );
             }
             return;
         }
