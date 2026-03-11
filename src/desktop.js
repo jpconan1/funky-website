@@ -14,6 +14,7 @@ import { Settings } from './settings.js';
 import { StartMenu } from './start-menu.js';
 import { applyWallpaperToDesktop } from './paint.js';
 import { VirusMan, SpriteRenderer } from './virus-man.js';
+import { HitCounter } from './hit-counter.js';
 
 
 async function preloadAssets(paths) {
@@ -79,6 +80,8 @@ export async function initDesktop() {
         new URL('./assets/settings.png', import.meta.url).href,
         new URL('./assets/funk-maker-3000.png', import.meta.url).href,
         new URL('./assets/virus-man/icon.png', import.meta.url).href,
+        new URL('./assets/hit-counter-sheet.png', import.meta.url).href,
+        new URL('./assets/counter-idle.png', import.meta.url).href,
         '/chime.wav'
     ];
 
@@ -100,6 +103,8 @@ export async function initDesktop() {
     // Wait for critical assets before starting sequence
     await preloading;
 
+    const hitCounter = new HitCounter();
+
     // Transition to desktop
     app.innerHTML = `
     <div id="desktop">
@@ -111,6 +116,7 @@ export async function initDesktop() {
     </div>
     <div id="taskbar" style="visibility: hidden">
       <div class="start-button"></div>
+      <div id="hit-counter"></div>
       <div class="clock"></div>
     </div>
     </div>
@@ -1173,6 +1179,7 @@ export async function initDesktop() {
     // 2. Wait 2 beats then show taskbar
     await new Promise(r => setTimeout(r, beat * 2));
     taskbar.style.visibility = 'visible';
+    hitCounter.init();
 
     // 3. Wait 1 beat then show icons
     await new Promise(r => setTimeout(r, beat * 1));

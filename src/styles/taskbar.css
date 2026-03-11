@@ -35,10 +35,59 @@
 }
 
 .clock {
-    margin-left: auto;
+    margin-left: 15px;
     border-left: 2px solid var(--bios-text);
     padding-left: 15px;
     height: 100%;
     display: flex;
     align-items: center;
+}
+
+#hit-counter {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    height: 100%;
+    padding-right: 5px;
+}
+
+.hit-digit {
+    width: 36px;
+    height: 36px;
+    background-image: url('../assets/counter-idle.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-weight: 900; /* Inter Black */
+    font-size: 20px;
+    color: #01301e;
+    image-rendering: pixelated;
+    margin: 0 -2px;
+    transition: transform 0.1s ease;
+}
+
+#hit-counter:hover .hit-digit {
+    background-image: url('../assets/hit-counter-sheet.png');
+    background-size: 180px 36px;
+    animation: boil 0.45s steps(5) infinite;
+}
+
+/* Stagger the boil animation and start frames for each digit */
+.hit-digit:nth-child(1) { animation-delay: -0.1s; }
+.hit-digit:nth-child(2) { animation-delay: -0.3s; animation-duration: 0.4s; }
+.hit-digit:nth-child(3) { animation-delay: -0.2s; }
+.hit-digit:nth-child(4) { animation-delay: -0.4s; animation-duration: 0.5s; }
+.hit-digit:nth-child(5) { animation-delay: -0.15s; }
+.hit-digit:nth-child(6) { animation-delay: -0.35s; animation-duration: 0.45s; }
+
+.hit-digit:nth-child(even) {
+    margin-top: -1px;
+}
+
+@keyframes boil {
+    from { background-position: 0 0; }
+    to { background-position: -180px 0; }
 }

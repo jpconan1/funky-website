@@ -293,3 +293,12 @@ export function formatDate(dateStr) {
     }
 }
 
+export async function incrementHitCount() {
+    if (!supabase) return 0;
+    const { data, error } = await supabase.rpc('increment_hit_counter');
+    if (error) {
+        console.error('incrementHitCount error:', error);
+        return 0;
+    }
+    return data;
+}
