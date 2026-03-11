@@ -98,7 +98,7 @@ export async function initDesktop() {
     const settings = new Settings(wm);
     const startMenu = new StartMenu(wm);
 
-    document.title = "Retro Desktop";
+    document.title = "JP-OS";
 
     // Wait for critical assets before starting sequence
     await preloading;
