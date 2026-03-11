@@ -468,7 +468,7 @@ export class WindowManager {
 
         win.element.style.width = '320px';
         win.element.style.height = 'auto';
-        win.element.style.minHeight = '140px';
+        win.element.style.minHeight = '170px';
 
         const desktopWidth = this.desktop.clientWidth;
         const desktopHeight = this.desktop.clientHeight;

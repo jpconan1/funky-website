@@ -741,12 +741,14 @@ export async function initDesktop() {
                 spawnVirusManAt(x, y);
                 
                 // 3. System Alert
-                const glitchStyle = `font-family: 'IBM VGA', monospace; font-size: 16px; white-space: nowrap; margin-bottom: 10px; display: block; filter: drop-shadow(2px 2px 0px rgba(255,0,0,0.5));`;
-                const instructionStyle = `font-family: 'Inter', sans-serif; font-size: 12px; text-transform: lowercase; color: var(--color-orange); line-height: 1.4; display: block;`;
+                const glitchStyle = `font-family: 'IBM VGA', monospace; font-size: 16px; white-space: nowrap; margin-bottom: 20px; display: block; filter: drop-shadow(2px 2px 0px rgba(255,0,0,0.5));`;
+                const instructionStyle = `font-family: 'Inter', sans-serif; font-size: 12px; text-transform: lowercase; color: var(--color-orange); line-height: 1.4; display: block; margin-bottom: 0;`;
+                const creditStyle = `position: absolute; bottom: 10px; left: 10px; font-family: 'Inter', sans-serif; font-size: 9px; opacity: 0.4; color: var(--bios-text); text-decoration: underline;`;
                 
                 wm.alert(
                     `<span style="${glitchStyle}">WARNGIN: sysJP'''''''$OVERRIDE0x999999{security_breach}</span>
-                     <span style="${instructionStyle}">arrow keys, xz controls virus-man</span>`, 
+                     <span style="${instructionStyle}">arrow keys, xz controls virus-man</span>
+                     <a href="https://pixel-moon-studio.itch.io" target="_blank" style="${creditStyle}">Pixel Moon made the sprite</a>`, 
                     "SYSTEM CRITICAL ERROR"
                 );
             }
