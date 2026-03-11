@@ -168,6 +168,38 @@ export class SynthEngine {
         this._voiceCounter = 0;
     }
 
+    getPreset(key) {
+        const preset = this.presets[key];
+        if (!preset) return null;
+
+        const snapshot = {
+            synthSettings: { ...this.synthSettings, ...preset.settings },
+            oscillatorOrder: [...this.oscillatorOrder],
+            voices: JSON.parse(JSON.stringify(this.availableVoices))
+        };
+
+        // Reset all voices in snapshot
+        Object.keys(snapshot.voices).forEach(vk => {
+            snapshot.voices[vk].active = false;
+        });
+
+        // Apply preset voices
+        Object.keys(preset.voices).forEach(vk => {
+            const pv = preset.voices[vk];
+            const av = snapshot.voices[vk];
+            if (av) {
+                av.active = true;
+                if (pv.ratio !== undefined) av.ratio = pv.ratio;
+                if (pv.gain !== undefined) av.gain = pv.gain;
+                if (pv.detune !== undefined) av.detune = pv.detune;
+                if (pv.pitchSweep !== undefined) av.pitchSweep = pv.pitchSweep;
+                if (pv.sweepDuration !== undefined) av.sweepDuration = pv.sweepDuration;
+            }
+        });
+
+        return snapshot;
+    }
+
     on(event, callback) {
         if (!this.listeners[event]) this.listeners[event] = [];
         this.listeners[event].push(callback);

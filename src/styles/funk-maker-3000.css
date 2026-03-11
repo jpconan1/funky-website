@@ -60,7 +60,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
-    padding: 12px;
+    padding: 12px 12px 20px;
     background: #1a1a1a;
     border-radius: 6px;
     border: 2px solid #333;
@@ -245,6 +245,70 @@
     color: #01301e;
     text-shadow: none;
     opacity: 0.6;
+}
+
+/* Pad Tabs */
+.pad-tab {
+    position: absolute;
+    bottom: -11px;
+    left: 4px;
+    right: 4px;
+    height: 15px;
+    background: #eef1db;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    font-size: 7px;
+    font-weight: 900;
+    color: #01301e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.1s ease, background 0.2s, color 0.2s;
+    overflow: hidden;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.pad.set .pad-tab {
+    background: var(--pad-color);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    border-color: rgba(255, 255, 255, 0.3);
+    filter: brightness(0.8);
+}
+
+.pad-tab:hover {
+    filter: brightness(1.2) !important;
+    height: 18px;
+    bottom: -13px;
+    z-index: 10;
+    color: #fff;
+    background: #444;
+}
+
+.pad.set .pad-tab:hover {
+    background: var(--pad-color);
+}
+
+.pad-tab.recalled {
+    background: #fff !important;
+    color: #000 !important;
+    text-shadow: none !important;
+    transform: scale(1.1) translateY(2px);
+    z-index: 100;
+}
+
+.pad-tab.assigned {
+    animation: pad-tab-glow 0.5s ease-out;
+}
+
+@keyframes pad-tab-glow {
+    0% { background: #fff; transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
 
 .instrument-builder {

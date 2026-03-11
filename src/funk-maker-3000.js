@@ -114,6 +114,37 @@ export class FunkMaker3000 {
         });
 
         this._loadSavedLoops();
+        this._applyDefaultPadMappings();
+
+        this._customCounter = 0;
+        this._lastPresetLoaded = null;
+        this._lastPresetName = null;
+    }
+
+    _applyDefaultPadMappings() {
+        const defaults = [
+            { key: 'z', preset: 'kick' },
+            { key: 'x', preset: 'snare' },
+            { key: 'c', preset: 'hat' }
+        ];
+
+        defaults.forEach(({ key, preset }) => {
+            const padData = this.keyMap[key];
+            if (padData) {
+                const c4Freq = 261.63;
+                padData.note = 'C4';
+                padData.freq = c4Freq;
+                padData.color = padData.targetColor;
+                padData.isSet = true;
+                padData.presetName = preset.charAt(0).toUpperCase() + preset.slice(1);
+
+                const presetSnapshot = this.synth.getPreset(preset);
+                if (presetSnapshot) {
+                    presetSnapshot.synthSettings.triggerMode = true;
+                    this.synth.setKeySnapshot(key, presetSnapshot);
+                }
+            }
+        });
     }
 
     _loadSavedLoops() {
@@ -386,6 +417,8 @@ export class FunkMaker3000 {
         Object.keys(this.synth.presets).forEach(key => {
             const btn = UI.createButton(this.synth.presets[key].name, () => {
                 this.synth.loadPreset(key);
+                this._lastPresetLoaded = key;
+                this._lastPresetName = this.synth.presets[key].name;
                 // No more manual renders here!
                 presetsRow.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -397,6 +430,8 @@ export class FunkMaker3000 {
 
         const randBtn = UI.createButton('🎲 Randomize', () => {
             this.synth.randomize();
+            this._lastPresetLoaded = null;
+            this._lastPresetName = null;
             // Events handle the rest!
             presetsRow.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
         });
@@ -1585,10 +1620,12 @@ export class FunkMaker3000 {
         this.padsOrder.forEach(keyChar => {
             const data = this.keyMap[keyChar];
             const setClass = data.isSet ? 'set' : '';
+            const tabText = data.isSet ? (data.presetName || 'custom') : '+';
             padsHtml += `
                 <div class="pad ${setClass}" data-key="${keyChar}" style="--pad-color: ${data.color}">
                     <div class="pad-label">${keyChar.toUpperCase()}</div>
                     <div class="note-label">${data.note}</div>
+                    <div class="pad-tab" data-key="${keyChar}">${tabText}</div>
                 </div>
             `;
         });
@@ -1817,6 +1854,71 @@ export class FunkMaker3000 {
         this._activePointers = new Map(); // pointerId -> key
 
         element.addEventListener('pointerdown', (e) => {
+            // Check for tap on pad tab specifically
+            const tab = e.target.closest('.pad-tab');
+            if (tab) {
+                const key = tab.dataset.key;
+                const padData = this.keyMap[key];
+                if (padData.isSet) {
+                    // Recall sound
+                    const snapshot = this.synth.keySnapshots[key];
+                    if (snapshot) {
+                        this.synth.applySnapshot(snapshot);
+                        // Ensure master synth stays in sustain mode (piano keys)
+                        this.synth.synthSettings.triggerMode = false;
+                        
+                        // Emit synth change to update global controllers
+                        this.synth.emit('synthChange', this.synth.snapshot());
+                        
+                        // Visual feedback
+                        tab.classList.add('recalled');
+                        setTimeout(() => tab.classList.remove('recalled'), 150);
+                        
+                        // Play tip-tap for preview
+                        this.synth.playNote(key, padData.freq, true, snapshot);
+                        setTimeout(() => this.synth.stopNote(key), 200);
+                        
+                        // Update last preset trackers if we recognized it
+                        this._lastPresetName = padData.presetName;
+                    }
+                } else {
+                    // Save sound to empty slot
+                    const sourceKeyChar = this.unsetPadMapping[key];
+                    if (sourceKeyChar) {
+                        const sourceData = this.keyMap[sourceKeyChar];
+                        const snapshot = this.synth.snapshot();
+                        snapshot.synthSettings.triggerMode = true; // Pads are one-shot
+
+                        padData.isSet = true;
+                        padData.note = sourceData.note;
+                        let targetFreq = sourceData.freq;
+                        if (this.octave !== 0) targetFreq *= Math.pow(2, this.octave);
+                        padData.freq = targetFreq;
+                        padData.color = padData.targetColor;
+
+                        // Use detected preset or custom count
+                        this._customCounter++;
+                        padData.presetName = this._lastPresetName || `custom ${this._customCounter}`;
+                        
+                        this.synth.setKeySnapshot(key, snapshot);
+                        
+                        // Local UI update
+                        const padEl = element.querySelector(`.pad[data-key="${key}"]`);
+                        if (padEl) {
+                            padEl.classList.add('set');
+                            padEl.style.setProperty('--pad-color', padData.color);
+                            const noteLabel = padEl.querySelector('.note-label');
+                            if (noteLabel) noteLabel.textContent = padData.note;
+                            tab.textContent = padData.presetName;
+                            tab.classList.add('assigned');
+                            setTimeout(() => tab.classList.remove('assigned'), 500);
+                        }
+                    }
+                }
+                e.stopPropagation();
+                return;
+            }
+
             const interactiveEl = e.target.closest('.piano-key, .pad');
             if (interactiveEl) {
                 // Blur focused inputs when playing keys
@@ -1958,6 +2060,11 @@ export class FunkMaker3000 {
                         padData.freq = targetFreq;
                         padData.color = padData.targetColor;
                         padData.isSet = true;
+                        padData.snapshot = snapshot; // Store the snapshot
+
+                        // Set name
+                        this._customCounter++;
+                        padData.presetName = this._lastPresetName || `custom ${this._customCounter}`;
 
                         // Notify synth engine
                         this.synth.setKeySnapshot(padKeyChar, snapshot);
@@ -1965,6 +2072,9 @@ export class FunkMaker3000 {
                         // Update Visuals
                         padEl.style.setProperty('--pad-color', padData.color);
                         padEl.classList.add('set');
+
+                        const tab = padEl.querySelector('.pad-tab');
+                        if (tab) tab.textContent = padData.presetName;
 
                         // Small flash or sound to confirm
                         this.synth.playNote(padKeyChar, padData.freq, true);
