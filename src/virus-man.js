@@ -99,6 +99,12 @@ export class VirusManInput {
     constructor() {
         this.keys = new Set();
         window.addEventListener('keydown', (e) => {
+            const isInput = e.target.tagName === 'INPUT' || 
+                            e.target.tagName === 'TEXTAREA' || 
+                            e.target.isContentEditable;
+
+            if (isInput) return;
+
             // Prevent scrolling with arrows
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
                 e.preventDefault();

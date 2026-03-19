@@ -2099,9 +2099,9 @@ export class FunkMaker3000 {
             // Focus handling: if an input is focused, typing a key should blur it 
             // so the keyboard shortcuts work and the input doesn't get junk.
             // BUT: we don't want to steal focus from text inputs where the user is typing!
-            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA')) {
+            if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable)) {
                 const isTextInput = (document.activeElement.tagName === 'INPUT' && (document.activeElement.type === 'text' || !document.activeElement.type)) ||
-                    document.activeElement.tagName === 'TEXTAREA';
+                    document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable;
 
                 if (isTextInput) return; // Let the user type in text fields!
 
@@ -2145,7 +2145,7 @@ export class FunkMaker3000 {
         const handleLoopKeyDown = (e) => {
             // Only handle loop-specific keys when loop tab is active
             if (this.activeTab !== 'loop') return;
-            if (e.target.tagName === 'INPUT') return; // don't steal input focus
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return; // don't steal input focus
 
             if (e.code === 'Space') {
                 e.preventDefault();
