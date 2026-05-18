@@ -28,8 +28,8 @@ export class Settings {
         const currentScale = localStorage.getItem('ui-scale') || '1';
         const scaleGroup = UI.createRadioGroup('UI Scale', [
             { label: '1x (Standard)', value: '1' },
-            { label: '1.5x (Large)', value: '1.5' },
-            { label: '2x (Mobile Default)', value: '2' }
+            { label: '1.25x (Medium)', value: '1.25' },
+            { label: '1.5x (Large)', value: '1.5' }
         ], 'ui-scale', currentScale, (val) => {
             document.documentElement.style.setProperty('--ui-scale', val);
             localStorage.setItem('ui-scale', val);

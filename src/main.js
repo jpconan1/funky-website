@@ -6,10 +6,15 @@ const app = document.querySelector('#app')
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 let savedScale = localStorage.getItem('ui-scale');
 
-if (!localStorage.getItem('ui-scale-initialized-v2')) {
-  savedScale = isMobile ? '2' : '1';
+if (!localStorage.getItem('ui-scale-initialized-v3')) {
+  savedScale = '1';
   localStorage.setItem('ui-scale', savedScale);
-  localStorage.setItem('ui-scale-initialized-v2', 'true');
+  localStorage.setItem('ui-scale-initialized-v3', 'true');
+}
+
+if (isMobile && savedScale !== '1') {
+  savedScale = '1';
+  localStorage.setItem('ui-scale', savedScale);
 }
 
 document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
@@ -94,4 +99,3 @@ import { initDesktop } from './desktop.js'
 runBootSequence().then(() => {
   initDesktop()
 })
-
