@@ -1,4 +1,9 @@
 import menuConfig from './start-menu-config.json';
+import portraitUrl from './assets/start-menu/portrait.jpg';
+
+const imageUrls = {
+    './assets/start-menu/portrait.jpg': portraitUrl,
+};
 
 export class StartMenu {
     constructor(windowManager) {
@@ -21,7 +26,7 @@ export class StartMenu {
                     if (node.type === 'paragraph') {
                         contentHtml += `<p>${node.text}</p>`;
                     } else if (node.type === 'image') {
-                        const imgSrc = new URL(node.src, import.meta.url).href;
+                        const imgSrc = imageUrls[node.src] || new URL(node.src, import.meta.url).href;
                         contentHtml += `<img src="${imgSrc}" class="${node.class || ''}" />`;
                     } else if (node.type === 'client-section') {
                         let instaHtml = '';
