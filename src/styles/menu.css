@@ -1,4 +1,5 @@
 #start-menu {
+    --start-menu-scale: 1;
     position: absolute;
     bottom: 45px;
     left: 0;
@@ -17,6 +18,8 @@
     overflow: visible;
     image-rendering: pixelated;
     pointer-events: auto;
+    transform: scale(var(--start-menu-scale));
+    transform-origin: bottom left;
 }
 
 #start-menu.visible {
@@ -273,12 +276,12 @@
 @keyframes menu-slide-up {
     from {
         opacity: 0;
-        transform: translateY(10px) scale(0.98);
+        transform: translateY(10px) scale(calc(var(--start-menu-scale) * 0.98));
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0) scale(var(--start-menu-scale));
     }
 }
 
@@ -311,4 +314,16 @@
 
 .menu-icon {
     font-size: 1rem;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .submenu {
+        left: auto;
+        right: -48px;
+        margin-left: 0;
+    }
+
+    .submenu::before {
+        display: none;
+    }
 }

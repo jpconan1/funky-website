@@ -20,6 +20,11 @@ if (isMobile && savedScale !== '1') {
 document.documentElement.style.setProperty('--ui-scale', savedScale || '1');
 
 let bootScreenContainer = null;
+const BOOT_TIME_SCALE = 0.5;
+
+function bootDelay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms * BOOT_TIME_SCALE));
+}
 
 function addLine(text = '') {
   const line = document.createElement('div')
@@ -35,7 +40,7 @@ async function typeText(text, speed = 50) {
   const line = addLine('')
   for (let i = 0; i < text.length; i++) {
     line.textContent += text[i]
-    await new Promise(r => setTimeout(r, speed))
+    await bootDelay(speed)
   }
   return line
 }
@@ -71,14 +76,14 @@ async function runBootSequence() {
         await typeText(step.text, step.speed)
         break
       case 'wait':
-        await new Promise(r => setTimeout(r, step.ms))
+        await bootDelay(step.ms)
         break
       case 'progress':
         const line = addLine(step.text)
         const increment = step.increment || 64
         for (let i = 0; i <= step.target; i += increment) {
           line.textContent = `${step.text}${i}${step.unit}`
-          await new Promise(r => setTimeout(r, step.speed || 20))
+          await bootDelay(step.speed || 20)
         }
         line.textContent = `${step.text}${step.target}${step.unit}`
         break

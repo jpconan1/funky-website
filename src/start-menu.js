@@ -11,6 +11,8 @@ export class StartMenu {
         this.element = null;
         this.startButton = null;
         this.config = menuConfig;
+        this.mobileMedia = window.matchMedia('(max-width: 768px), (pointer: coarse)');
+        this.fitToViewport = this.fitToViewport.bind(this);
     }
 
     render() {
@@ -94,10 +96,16 @@ export class StartMenu {
             const isVisible = this.element.classList.toggle('visible');
             this.startButton.classList.toggle('active');
 
+            if (isVisible) {
+                this.fitToViewport();
+            }
+
             if (isVisible && window.instgrm) {
                 window.instgrm.Embeds.process();
             }
         });
+
+        window.addEventListener('resize', this.fitToViewport);
 
         // Submenu Positioning Clamping
         this.setupSubmenuClamping();
@@ -122,6 +130,28 @@ export class StartMenu {
             script.async = true;
             document.body.appendChild(script);
         }
+    }
+
+    fitToViewport() {
+        if (!this.element) return;
+
+        if (!this.mobileMedia.matches) {
+            this.element.style.removeProperty('--start-menu-scale');
+            return;
+        }
+
+        const horizontalPadding = 8;
+        const taskbarHeight = 45;
+        const verticalPadding = 8;
+        const availableWidth = window.innerWidth - horizontalPadding;
+        const availableHeight = window.innerHeight - taskbarHeight - verticalPadding;
+        const scale = Math.min(
+            1,
+            availableWidth / this.element.offsetWidth,
+            availableHeight / this.element.offsetHeight
+        );
+
+        this.element.style.setProperty('--start-menu-scale', Math.max(scale, 0.1));
     }
 
     setupSubmenuClamping() {
