@@ -75,6 +75,7 @@ export async function initDesktop() {
         new URL('./assets/bin-icon.png', import.meta.url).href,
         new URL('./assets/start-menu/portrait.jpg', import.meta.url).href,
         new URL('./assets/burger-joint.png', import.meta.url).href,
+        new URL('./assets/super-abm-icon.png', import.meta.url).href,
         new URL('./assets/working-draft-icon.png', import.meta.url).href,
         new URL('./assets/chess-icon.png', import.meta.url).href,
         new URL('./assets/settings.png', import.meta.url).href,
@@ -1037,6 +1038,14 @@ export async function initDesktop() {
             const burgerPos = getGridPosition(iconPairs.length); // Place after binned icons and other files
             iconGrid.appendChild(createIcon(burgerFile, burgerPos.x, burgerPos.y));
 
+            const abmFile = {
+                name: 'Super ABM',
+                type: 'url',
+                url: 'https://abm.jpconan.ca'
+            };
+            const abmPos = getGridPosition(iconPairs.length);
+            iconGrid.appendChild(createIcon(abmFile, abmPos.x, abmPos.y));
+
             // Add Settings icon
             const settingsFile = {
                 name: 'Settings',
@@ -1248,6 +1257,9 @@ export function getSpriteHTML(className, frames = 3) {
 }
 
 export function getIconSymbol(file) {
+    if (file.name === 'Super ABM') {
+        return `<div class="sprite" style="background-image: url('${new URL('./assets/super-abm-icon.png', import.meta.url).href}'); --frames: 1;"></div>`;
+    }
     if (file.name === 'Burger Joint') {
         return `<div class="sprite" style="background-image: url('${new URL('./assets/burger-joint.png', import.meta.url).href}'); --frames: 1;"></div>`;
     }
